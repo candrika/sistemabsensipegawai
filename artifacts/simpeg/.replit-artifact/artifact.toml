@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Sistem Informasi Kepegawaian"
+version = "1.0.0"
+id = "artifacts/simpeg"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24259
+
+[services.development]
+run = "pnpm --filter @workspace/simpeg run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/simpeg", "run", "build" ]
+publicDir = "artifacts/simpeg/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24259"
+BASE_PATH = "/"
