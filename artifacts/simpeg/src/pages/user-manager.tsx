@@ -53,6 +53,7 @@ export default function UserManager() {
           data: {
             username: form.username,
             roleId: Number(form.roleId),
+            employeeId: form.employeeId ? Number(form.employeeId) : undefined,
             ...(form.password ? { password: form.password } : {}),
           },
         });
@@ -63,6 +64,7 @@ export default function UserManager() {
             username: form.username,
             password: form.password,
             roleId: Number(form.roleId),
+            employeeId: form.employeeId ? Number(form.employeeId) : undefined,
           },
         });
         toast({ title: "User created" });
@@ -83,6 +85,7 @@ export default function UserManager() {
       username: user.username,
       password: "",
       roleId: String(user.roleId),
+      employeeId: String(user.employeeId || ""),
     });
     setOpen(true);
   };
@@ -124,7 +127,7 @@ export default function UserManager() {
                 <div>
                   <p className="font-semibold">{user.username}</p>
                   <p className="text-sm text-muted-foreground">
-                    Role: {user.roleName || "-"}
+                    Role: {user.roleName || "-"} | Pegawai: {user.employee?.nama || "-"}
                   </p>
                 </div>
 
