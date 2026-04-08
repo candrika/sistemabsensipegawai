@@ -6,8 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface AttendanceSummary {
-  izin: number;
-  cuti: number;
-  dinas: number;
-}
+export type DeleteSeller200 = {
+  message?: string;
+};

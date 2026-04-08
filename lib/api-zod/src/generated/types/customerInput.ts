@@ -6,8 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface AttendanceSummary {
-  izin: number;
-  cuti: number;
-  dinas: number;
+export interface CustomerInput {
+  nama: string;
+  alamat?: string;
+  kontak?: string;
 }

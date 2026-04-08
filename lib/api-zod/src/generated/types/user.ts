@@ -5,12 +5,20 @@
  * Sistem Informasi Kepegawaian dan Status Kehadiran API
  * OpenAPI spec version: 0.1.0
  */
+import type { Customer } from "./customer";
+import type { Employee } from "./employee";
+import type { Seller } from "./seller";
 
 export interface User {
   id: number;
   username: string;
   roleId: number;
   employeeId?: number | null;
+  employee?: Employee;
+  customerId?: number | null;
+  customer?: Customer;
+  sellerId?: number | null;
+  seller?: Seller;
   createdAt: string;
   updatedAt: string;
 }

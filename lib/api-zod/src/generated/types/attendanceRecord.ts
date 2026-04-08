@@ -13,7 +13,9 @@ export interface AttendanceRecord {
   employeeId: number;
   employee?: Employee;
   status: AttendanceRecordStatus;
-  tanggal: string;
+  tglMulai: string;
+  tglAkhir: string;
+  dokumenPendukung?: string | null;
   alasan?: string | null;
   keterangan?: string | null;
   createdAt: string;

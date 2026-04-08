@@ -7,9 +7,7 @@
  */
 
 export interface DocumentSummary {
-  SP3S: number;
-  SIJ: number;
-  CUTI: number;
+  IJIN: number;
   DINAS: number;
   SKMJ: number;
   SURAT_TUGAS: number;

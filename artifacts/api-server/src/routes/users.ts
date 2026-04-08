@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { db, usersTable, rolesTable, insertUserSchema } from "@workspace/db";
+import { db, usersTable, rolesTable, employeesTable, sellersTable, customersTable, insertUserSchema } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
 
@@ -17,11 +17,28 @@ router.get("/users", async (req, res) => {
         roleId: usersTable.roleId,
         roleName: rolesTable.name,
         employeeId: usersTable.employeeId,
+        sellerId: usersTable.sellerId,
+        customerId: usersTable.customerId,
         createdAt: usersTable.createdAt,
         updatedAt: usersTable.updatedAt,
+        employee: {
+          id: employeesTable.id,
+          nama: employeesTable.nama,
+        },
+        seller: {
+          id: sellersTable.id,
+          nama: sellersTable.nama,
+        },
+        customer: {
+          id: customersTable.id,
+          nama: customersTable.nama,
+        }
       })
       .from(usersTable)
       .leftJoin(rolesTable, eq(usersTable.roleId, rolesTable.id))
+      .leftJoin(employeesTable, eq(usersTable.employeeId, employeesTable.id))
+      .leftJoin(sellersTable, eq(usersTable.sellerId, sellersTable.id))
+      .leftJoin(customersTable, eq(usersTable.customerId, customersTable.id))
       .orderBy(usersTable.username);
 
     res.json(
@@ -52,6 +69,8 @@ router.get("/users/:id", async (req, res) => {
         roleId: usersTable.roleId,
         roleName: rolesTable.name,
         employeeId: usersTable.employeeId,
+        sellerId: usersTable.sellerId,
+        customerId: usersTable.customerId,
         createdAt: usersTable.createdAt,
         updatedAt: usersTable.updatedAt,
       })
@@ -113,6 +132,8 @@ router.post("/users", async (req, res) => {
       username: user.username,
       roleId: user.roleId,
       employeeId: user.employeeId,
+      sellerId: user.sellerId,
+      customerId: user.customerId,
       createdAt: user.createdAt.toISOString(),
       updatedAt: user.updatedAt.toISOString(),
     });
@@ -162,6 +183,8 @@ router.put("/users/:id", async (req, res) => {
       username: user.username,
       roleId: user.roleId,
       employeeId: user.employeeId,
+      sellerId: user.sellerId,
+      customerId: user.customerId,
       createdAt: user.createdAt.toISOString(),
       updatedAt: user.updatedAt.toISOString(),
     });

@@ -82,7 +82,6 @@ export type AttendanceRecordStatus =
 
 export const AttendanceRecordStatus = {
   izin: "izin",
-  tidak_hadir: "tidak_hadir",
   cuti: "cuti",
   dinas: "dinas",
 } as const;
@@ -92,7 +91,9 @@ export interface AttendanceRecord {
   employeeId: number;
   employee?: Employee;
   status: AttendanceRecordStatus;
-  tanggal: string;
+  tglMulai: string;
+  tglAkhir: string;
+  dokumenPendukung?: string | null;
   alasan?: string | null;
   keterangan?: string | null;
   createdAt: string;
@@ -118,7 +119,6 @@ export type CreateAttendanceRecordStatus =
 
 export const CreateAttendanceRecordStatus = {
   izin: "izin",
-  tidak_hadir: "tidak_hadir",
   cuti: "cuti",
   dinas: "dinas",
 } as const;
@@ -126,14 +126,15 @@ export const CreateAttendanceRecordStatus = {
 export interface CreateAttendanceRecord {
   employeeId: number;
   status: CreateAttendanceRecordStatus;
-  tanggal: string;
+  tglMulai: string;
+  tglAkhir: string;
+  dokumenPendukung?: string | null;
   alasan?: string | null;
   keterangan?: string | null;
 }
 
 export interface AttendanceSummary {
   izin: number;
-  tidak_hadir: number;
   cuti: number;
   dinas: number;
 }
@@ -141,9 +142,7 @@ export interface AttendanceSummary {
 export type DocumentType = (typeof DocumentType)[keyof typeof DocumentType];
 
 export const DocumentType = {
-  SP3S: "SP3S",
-  SIJ: "SIJ",
-  CUTI: "CUTI",
+  IJIN: "IJIN",
   DINAS: "DINAS",
   SKMJ: "SKMJ",
   SURAT_TUGAS: "SURAT_TUGAS",
@@ -175,9 +174,7 @@ export type CreateDocumentType =
   (typeof CreateDocumentType)[keyof typeof CreateDocumentType];
 
 export const CreateDocumentType = {
-  SP3S: "SP3S",
-  SIJ: "SIJ",
-  CUTI: "CUTI",
+  IJIN: "IJIN",
   DINAS: "DINAS",
   SKMJ: "SKMJ",
   SURAT_TUGAS: "SURAT_TUGAS",
@@ -203,9 +200,7 @@ export interface CreateDocument {
 }
 
 export interface DocumentSummary {
-  SP3S: number;
-  SIJ: number;
-  CUTI: number;
+  IJIN: number;
   DINAS: number;
   SKMJ: number;
   SURAT_TUGAS: number;
@@ -284,6 +279,15 @@ export const ComplaintKategori = {
   lainnya: "lainnya",
 } as const;
 
+export type ComplaintJenisPelanggan =
+  (typeof ComplaintJenisPelanggan)[keyof typeof ComplaintJenisPelanggan];
+
+export const ComplaintJenisPelanggan = {
+  perorangan: "perorangan",
+  SPBU: "SPBU",
+  industri: "industri",
+} as const;
+
 export type ComplaintStatus =
   (typeof ComplaintStatus)[keyof typeof ComplaintStatus];
 
@@ -308,6 +312,7 @@ export interface Complaint {
   namaPelanggan: string;
   kontakPelanggan?: string | null;
   kategori: ComplaintKategori;
+  jenisPelanggan: ComplaintJenisPelanggan;
   judul: string;
   deskripsi: string;
   status: ComplaintStatus;
@@ -315,6 +320,9 @@ export interface Complaint {
   tanggal: string;
   penangananOleh?: string | null;
   catatanPenanganan?: string | null;
+  spbuNumber?: string | null;
+  spbuName?: string | null;
+  industryName?: string | null;
   createdAt: string;
 }
 
@@ -326,6 +334,15 @@ export const CreateComplaintKategori = {
   layanan: "layanan",
   pengiriman: "pengiriman",
   lainnya: "lainnya",
+} as const;
+
+export type CreateComplaintJenisPelanggan =
+  (typeof CreateComplaintJenisPelanggan)[keyof typeof CreateComplaintJenisPelanggan];
+
+export const CreateComplaintJenisPelanggan = {
+  perorangan: "perorangan",
+  SPBU: "SPBU",
+  industri: "industri",
 } as const;
 
 export type CreateComplaintStatus =
@@ -351,6 +368,7 @@ export interface CreateComplaint {
   namaPelanggan: string;
   kontakPelanggan?: string | null;
   kategori: CreateComplaintKategori;
+  jenisPelanggan: CreateComplaintJenisPelanggan;
   judul: string;
   deskripsi: string;
   status: CreateComplaintStatus;
@@ -358,6 +376,9 @@ export interface CreateComplaint {
   tanggal: string;
   penangananOleh?: string | null;
   catatanPenanganan?: string | null;
+  spbuNumber?: string | null;
+  spbuName?: string | null;
+  industryName?: string | null;
 }
 
 export interface ComplaintSummary {
@@ -382,11 +403,32 @@ export interface AuthUser {
   permissions: string[];
 }
 
+export interface Customer {
+  id?: number;
+  nama?: string;
+  alamat?: string;
+  kontak?: string;
+  createdAt?: string;
+}
+
+export interface Seller {
+  id?: number;
+  nama?: string;
+  kontak?: string;
+  alamat?: string;
+  createdAt?: string;
+}
+
 export interface User {
   id: number;
   username: string;
   roleId: number;
   employeeId?: number | null;
+  employee?: Employee;
+  customerId?: number | null;
+  customer?: Customer;
+  sellerId?: number | null;
+  seller?: Seller;
   createdAt: string;
   updatedAt: string;
 }
@@ -396,6 +438,18 @@ export interface CreateUser {
   password: string;
   roleId: number;
   employeeId?: number | null;
+}
+
+export interface CustomerInput {
+  nama: string;
+  alamat?: string;
+  kontak?: string;
+}
+
+export interface SellerInput {
+  nama: string;
+  kontak?: string;
+  alamat?: string;
 }
 
 export type GetAttendanceRecordsParams = {
@@ -428,6 +482,19 @@ export const GetDocumentsType = {
   SKMJ: "SKMJ",
   SURAT_TUGAS: "SURAT_TUGAS",
 } as const;
+
+export type UpdateDocumentBodyStatus =
+  (typeof UpdateDocumentBodyStatus)[keyof typeof UpdateDocumentBodyStatus];
+
+export const UpdateDocumentBodyStatus = {
+  pending: "pending",
+  approved: "approved",
+  rejected: "rejected",
+} as const;
+
+export type UpdateDocumentBody = {
+  status: UpdateDocumentBodyStatus;
+};
 
 export type GetInventoryTransactionsParams = {
   tipe?: GetInventoryTransactionsTipe;
@@ -476,3 +543,11 @@ export const GetComplaintsKategori = {
   pengiriman: "pengiriman",
   lainnya: "lainnya",
 } as const;
+
+export type DeleteCustomer200 = {
+  message?: string;
+};
+
+export type DeleteSeller200 = {
+  message?: string;
+};

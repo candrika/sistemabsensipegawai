@@ -3,7 +3,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { employeesTable } from "./employees";
 
-export const documentTypeEnum = ["SP3S", "SIJ", "CUTI", "DINAS", "SKMJ", "SURAT_TUGAS"] as const;
+export const documentTypeEnum = ["IJIN", "DINAS", "SKMJ", "SURAT_TUGAS"] as const;
 export const documentStatusEnum = ["pending", "approved", "rejected"] as const;
 
 export const documentsTable = pgTable("documents", {

@@ -11,7 +11,6 @@ export type CreateAttendanceRecordStatus =
 
 export const CreateAttendanceRecordStatus = {
   izin: "izin",
-  tidak_hadir: "tidak_hadir",
   cuti: "cuti",
   dinas: "dinas",
 } as const;

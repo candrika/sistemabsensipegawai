@@ -21,6 +21,9 @@ tags:
     description: Inventory in/out management
   - name: complaints
     description: Customer complaints management
+  - name: customers
+    description: Customers management
+
 paths:
   /healthz:
     get:
@@ -325,6 +328,34 @@ paths:
       responses:
         "200":
           description: Document detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+    patch:
+      operationId: updateDocument
+      tags: [documents]
+      summary: Update document status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [pending, approved, rejected]
+              required: [status]
+      responses:
+        "200":
+          description: Document updated
           content:
             application/json:
               schema:
@@ -817,11 +848,169 @@ paths:
             type: integer
       responses:
         "200":
-          description: Deleted
+          description: Berhasil hapus
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/MessageResponse"
+
+  /customers:
+    get:
+      operationId: getCustomers
+      summary: Get semua pelanggan
+      tags: [Customers]
+      responses:
+        "200":
+          description: List pelanggan
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Customer"
+
+    post:
+      operationId: createCustomer
+      summary: Tambah pelanggan
+      tags: [Customers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerInput"
+      responses:
+        "201":
+          description: Berhasil dibuat
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+
+  /customers/{id}:
+    put:
+      operationId: updateCustomer
+      summary: Update pelanggan
+      tags: [Customers]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerInput"
+      responses:
+        "200":
+          description: Berhasil update
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+    
+    delete:
+      operationId: deleteCustomer
+      summary: Hapus pelanggan
+      tags: [Customers]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Berhasil hapus
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /sellers:
+    get:
+      operationId: getSellers
+      summary: Get semua penjual
+      tags: [Sellers]
+      responses:
+        "200":
+          description: List penjual
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Seller"
+
+    post:
+      operationId: createSeller
+      summary: Tambah penjual
+      tags: [Sellers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SellerInput"
+      responses:
+        "201":
+          description: Berhasil dibuat
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Seller"
+
+  /sellers/{id}:
+    put:
+      operationId: updateSeller
+      summary: Update penjual
+      tags: [Sellers]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SellerInput"
+      responses:
+        "200":
+          description: Berhasil update
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Seller"
+
+    delete:
+      operationId: deleteSeller
+      summary: Hapus penjual
+      tags: [Sellers]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Berhasil hapus
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
 
 components:
   schemas:
@@ -971,9 +1160,14 @@ components:
           $ref: "#/components/schemas/Employee"
         status:
           type: string
-          enum: [izin, tidak_hadir, cuti, dinas]
-        tanggal:
+          enum: [izin, cuti, dinas]
+        tglMulai:
           type: string
+        tglAkhir:
+          type: string
+        dokumenPendukung:
+          type: string
+          nullable: true
         alasan:
           type: string
           nullable: true
@@ -986,7 +1180,8 @@ components:
         - id
         - employeeId
         - status
-        - tanggal
+        - tglMulai
+        - tglAkhir
         - createdAt
 
     Role:
@@ -1033,9 +1228,14 @@ components:
           type: integer
         status:
           type: string
-          enum: [izin, tidak_hadir, cuti, dinas]
-        tanggal:
+          enum: [izin, cuti, dinas]
+        tglMulai:
           type: string
+        tglAkhir:
+          type: string
+        dokumenPendukung:
+          type: string
+          nullable: true
         alasan:
           type: string
           nullable: true
@@ -1045,14 +1245,13 @@ components:
       required:
         - employeeId
         - status
-        - tanggal
+        - tglMulai
+        - tglAkhir
 
     AttendanceSummary:
       type: object
       properties:
         izin:
-          type: integer
-        tidak_hadir:
           type: integer
         cuti:
           type: integer
@@ -1060,7 +1259,6 @@ components:
           type: integer
       required:
         - izin
-        - tidak_hadir
         - cuti
         - dinas
 
@@ -1075,7 +1273,7 @@ components:
           $ref: "#/components/schemas/Employee"
         type:
           type: string
-          enum: [SP3S, SIJ, CUTI, DINAS, SKMJ, SURAT_TUGAS]
+          enum: [IJIN, DINAS, SKMJ, SURAT_TUGAS]
         nomorSurat:
           type: string
           nullable: true
@@ -1107,7 +1305,7 @@ components:
           type: integer
         type:
           type: string
-          enum: [SP3S, SIJ, CUTI, DINAS, SKMJ, SURAT_TUGAS]
+          enum: [IJIN, DINAS, SKMJ, SURAT_TUGAS]
         nomorSurat:
           type: string
           nullable: true
@@ -1131,11 +1329,7 @@ components:
     DocumentSummary:
       type: object
       properties:
-        SP3S:
-          type: integer
-        SIJ:
-          type: integer
-        CUTI:
+        IJIN:
           type: integer
         DINAS:
           type: integer
@@ -1144,9 +1338,7 @@ components:
         SURAT_TUGAS:
           type: integer
       required:
-        - SP3S
-        - SIJ
-        - CUTI
+        - IJIN
         - DINAS
         - SKMJ
         - SURAT_TUGAS
@@ -1286,6 +1478,9 @@ components:
         kategori:
           type: string
           enum: [produk, layanan, pengiriman, lainnya]
+        jenisPelanggan:
+          type: string
+          enum: [perorangan, SPBU, industri]
         judul:
           type: string
         deskripsi:
@@ -1304,12 +1499,22 @@ components:
         catatanPenanganan:
           type: string
           nullable: true
+        spbuNumber:
+          type: string
+          nullable: true
+        spbuName:
+          type: string
+          nullable: true
+        industryName:
+          type: string
+          nullable: true
         createdAt:
           type: string
       required:
         - id
         - namaPelanggan
         - kategori
+        - jenisPelanggan
         - judul
         - deskripsi
         - status
@@ -1328,6 +1533,9 @@ components:
         kategori:
           type: string
           enum: [produk, layanan, pengiriman, lainnya]
+        jenisPelanggan:
+          type: string
+          enum: [perorangan, SPBU, industri]
         judul:
           type: string
         deskripsi:
@@ -1346,9 +1554,19 @@ components:
         catatanPenanganan:
           type: string
           nullable: true
+        spbuNumber:
+          type: string
+          nullable: true
+        spbuName:
+          type: string
+          nullable: true
+        industryName:
+          type: string
+          nullable: true
       required:
         - namaPelanggan
         - kategori
+        - jenisPelanggan
         - judul
         - deskripsi
         - status
@@ -1425,6 +1643,16 @@ components:
           nullable: true
         employee:   # ✅ TAMBAHKAN INI
           $ref: "#/components/schemas/Employee"
+        customerId:
+          type: integer
+          nullable: true
+        customer:   # ✅ TAMBAHKAN INI
+          $ref: "#/components/schemas/Customer"
+        sellerId:
+          type: integer
+          nullable: true
+        seller:   # ✅ TAMBAHKAN INI
+          $ref: "#/components/schemas/Seller"    
         createdAt:
           type: string
         updatedAt:
@@ -1451,4 +1679,55 @@ components:
       required:
         - username
         - password
-        - roleId    
+        - roleId
+
+    Customer:
+      type: object
+      properties:
+        id:
+          type: integer
+        nama:
+          type: string
+        alamat:
+          type: string
+        kontak:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    CustomerInput:
+      type: object
+      required: [nama]
+      properties:
+        nama:
+          type: string
+        alamat:
+          type: string
+        kontak:
+          type: string
+    Seller:
+      type: object
+      properties:
+        id:
+          type: integer
+        nama:
+          type: string
+        kontak:
+          type: string
+        alamat:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    SellerInput:
+      type: object
+      required: [nama]
+      properties:
+        nama:
+          type: string
+        kontak:
+          type: string
+        alamat:
+          type: string          

@@ -9,9 +9,7 @@
 export type DocumentType = (typeof DocumentType)[keyof typeof DocumentType];
 
 export const DocumentType = {
-  SP3S: "SP3S",
-  SIJ: "SIJ",
-  CUTI: "CUTI",
+  IJIN: "IJIN",
   DINAS: "DINAS",
   SKMJ: "SKMJ",
   SURAT_TUGAS: "SURAT_TUGAS",

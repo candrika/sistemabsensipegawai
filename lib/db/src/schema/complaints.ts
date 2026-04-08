@@ -7,6 +7,7 @@ export const complaintsTable = pgTable("complaints", {
   namaPelanggan: text("nama_pelanggan").notNull(),
   kontakPelanggan: text("kontak_pelanggan"),
   kategori: text("kategori", { enum: ["produk", "layanan", "pengiriman", "lainnya"] }).notNull(),
+  jenisPelanggan: text("jenis_pelanggan", { enum: ["perorangan", "SPBU", "industri"] }).notNull().default("perorangan"),
   judul: text("judul").notNull(),
   deskripsi: text("deskripsi").notNull(),
   status: text("status", { enum: ["baru", "diproses", "selesai", "ditolak"] }).notNull().default("baru"),
@@ -14,6 +15,10 @@ export const complaintsTable = pgTable("complaints", {
   tanggal: text("tanggal").notNull(),
   penangananOleh: text("penanganan_oleh"),
   catatanPenanganan: text("catatan_penanganan"),
+  // Additional fields for SPBU and industri customer types
+  spbuNumber: text("spbu_number"),
+  spbuName: text("spbu_name"),
+  industryName: text("industry_name"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

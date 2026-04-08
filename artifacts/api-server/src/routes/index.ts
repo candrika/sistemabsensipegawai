@@ -8,6 +8,8 @@ import complaintsRouter from "./complaints";
 import rolesRouter from "./roles";
 import usersRouter from "./users";
 import authRouter from "./auth";
+import sellersRouter from "./sellers";
+import customersRouter from "./customers";
 
 const router: IRouter = Router();
 
@@ -20,5 +22,7 @@ router.use(attendanceRouter);
 router.use(documentsRouter);
 router.use(inventoryRouter);
 router.use(complaintsRouter);
+router.use(sellersRouter);
+router.use(customersRouter);
 
 export default router;

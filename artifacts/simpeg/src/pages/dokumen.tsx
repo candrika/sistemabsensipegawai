@@ -12,10 +12,8 @@ export default function Dokumen() {
   });
 
   const docTypes = [
-    { type: "SP3S", label: "SP3S", desc: "Surat Perintah Perjalanan Pegawai Sementara", color: "stat-card-blue" },
-    { type: "SIJ", label: "SIJ", desc: "Surat Izin Jalan", color: "stat-card-teal" },
-    { type: "CUTI", label: "Cuti", desc: "Formulir Permohonan Cuti", color: "stat-card-amber" },
-    { type: "DINAS", label: "Dinas", desc: "Surat Keterangan Dinas Luar", color: "stat-card-green" },
+    { type: "IZIN", label: "Izin", desc: "Surat Izin, Cuti, dan Perjalanan (Otomatis)", color: "stat-card-blue" },
+    { type: "DINAS", label: "Dinas", desc: "Surat Keterangan Dinas Luar (Otomatis)", color: "stat-card-green" },
     { type: "SKMJ", label: "SKMJ", desc: "Surat Keterangan Mengikuti Jabatan", color: "stat-card-purple" },
     { type: "SURAT_TUGAS", label: "Surat Tugas", desc: "Pemberian Tugas Khusus", color: "stat-card-red" },
   ];
@@ -52,7 +50,14 @@ export default function Dokumen() {
                   )}
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-2xl text-white">{doc.label}</h3>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="font-extrabold text-2xl text-white">{doc.label}</h3>
+                    {(doc.type === "IJIN" || doc.type === "DINAS") && (
+                      <span className="bg-green-500/20 text-green-100 text-xs px-2 py-1 rounded-full border border-green-400/30 font-medium">
+                        Auto
+                      </span>
+                    )}
+                  </div>
                   <p className="text-sm text-white/80 mt-2 mb-6 font-medium leading-relaxed">
                     {doc.desc}
                   </p>

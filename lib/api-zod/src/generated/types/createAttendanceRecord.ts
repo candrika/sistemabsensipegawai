@@ -10,7 +10,9 @@ import type { CreateAttendanceRecordStatus } from "./createAttendanceRecordStatu
 export interface CreateAttendanceRecord {
   employeeId: number;
   status: CreateAttendanceRecordStatus;
-  tanggal: string;
+  tglMulai: string;
+  tglAkhir: string;
+  dokumenPendukung?: string | null;
   alasan?: string | null;
   keterangan?: string | null;
 }

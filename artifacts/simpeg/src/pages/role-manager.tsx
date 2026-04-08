@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { ShieldCheck, ShieldOff, Shield, User, Package, MessageSquareWarning, Check, X, ChevronRight } from "lucide-react";
+import { ShieldCheck, ShieldOff, Shield, User, Package, MessageSquareWarning, Check, X, ChevronRight, Users, Store } from "lucide-react";
 
 const roleColors: Record<string, string> = {
   admin: "from-violet-600 to-indigo-700",
@@ -35,6 +35,8 @@ const resourceColors: Record<string, string> = {
   documents: "bg-violet-100 text-violet-700 border-violet-200",
   inventory: "bg-emerald-100 text-emerald-700 border-emerald-200",
   complaints: "bg-rose-100 text-rose-700 border-rose-200",
+  customers: "bg-cyan-100 text-cyan-700 border-cyan-200",
+  sellers: "bg-orange-100 text-orange-700 border-orange-200",
   users: "bg-slate-100 text-slate-700 border-slate-200",
 };
 
@@ -52,6 +54,8 @@ const resourceLabels: Record<string, string> = {
   documents: "Dokumen",
   inventory: "Inventori",
   complaints: "Keluhan",
+  customers: "Data Pelanggan",
+  sellers: "Data Penjual",
   users: "Pengguna",
 };
 

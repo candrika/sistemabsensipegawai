@@ -270,8 +270,10 @@ export const GetAttendanceRecordsResponseItem = zod.object({
       createdAt: zod.string(),
     })
     .optional(),
-  status: zod.enum(["izin", "tidak_hadir", "cuti", "dinas"]),
-  tanggal: zod.string(),
+  status: zod.enum(["izin", "cuti", "dinas"]),
+  tglMulai: zod.string(),
+  tglAkhir: zod.string(),
+  dokumenPendukung: zod.string().nullish(),
   alasan: zod.string().nullish(),
   keterangan: zod.string().nullish(),
   createdAt: zod.string(),
@@ -285,8 +287,10 @@ export const GetAttendanceRecordsResponse = zod.array(
  */
 export const CreateAttendanceRecordBody = zod.object({
   employeeId: zod.number(),
-  status: zod.enum(["izin", "tidak_hadir", "cuti", "dinas"]),
-  tanggal: zod.string(),
+  status: zod.enum(["izin", "cuti", "dinas"]),
+  tglMulai: zod.string(),
+  tglAkhir: zod.string(),
+  dokumenPendukung: zod.string().nullish(),
   alasan: zod.string().nullish(),
   keterangan: zod.string().nullish(),
 });
@@ -296,7 +300,6 @@ export const CreateAttendanceRecordBody = zod.object({
  */
 export const GetAttendanceSummaryResponse = zod.object({
   izin: zod.number(),
-  tidak_hadir: zod.number(),
   cuti: zod.number(),
   dinas: zod.number(),
 });
@@ -310,8 +313,10 @@ export const UpdateAttendanceRecordParams = zod.object({
 
 export const UpdateAttendanceRecordBody = zod.object({
   employeeId: zod.number(),
-  status: zod.enum(["izin", "tidak_hadir", "cuti", "dinas"]),
-  tanggal: zod.string(),
+  status: zod.enum(["izin", "cuti", "dinas"]),
+  tglMulai: zod.string(),
+  tglAkhir: zod.string(),
+  dokumenPendukung: zod.string().nullish(),
   alasan: zod.string().nullish(),
   keterangan: zod.string().nullish(),
 });
@@ -348,8 +353,10 @@ export const UpdateAttendanceRecordResponse = zod.object({
       createdAt: zod.string(),
     })
     .optional(),
-  status: zod.enum(["izin", "tidak_hadir", "cuti", "dinas"]),
-  tanggal: zod.string(),
+  status: zod.enum(["izin", "cuti", "dinas"]),
+  tglMulai: zod.string(),
+  tglAkhir: zod.string(),
+  dokumenPendukung: zod.string().nullish(),
   alasan: zod.string().nullish(),
   keterangan: zod.string().nullish(),
   createdAt: zod.string(),
@@ -407,7 +414,7 @@ export const GetDocumentsResponseItem = zod.object({
       createdAt: zod.string(),
     })
     .optional(),
-  type: zod.enum(["SP3S", "SIJ", "CUTI", "DINAS", "SKMJ", "SURAT_TUGAS"]),
+  type: zod.enum(["IJIN", "DINAS", "SKMJ", "SURAT_TUGAS"]),
   nomorSurat: zod.string().nullish(),
   perihal: zod.string().nullish(),
   tanggal: zod.string(),
@@ -422,7 +429,7 @@ export const GetDocumentsResponse = zod.array(GetDocumentsResponseItem);
  */
 export const CreateDocumentBody = zod.object({
   employeeId: zod.number(),
-  type: zod.enum(["SP3S", "SIJ", "CUTI", "DINAS", "SKMJ", "SURAT_TUGAS"]),
+  type: zod.enum(["IJIN", "DINAS", "SKMJ", "SURAT_TUGAS"]),
   nomorSurat: zod.string().nullish(),
   perihal: zod.string().nullish(),
   tanggal: zod.string(),
@@ -469,7 +476,59 @@ export const GetDocumentResponse = zod.object({
       createdAt: zod.string(),
     })
     .optional(),
-  type: zod.enum(["SP3S", "SIJ", "CUTI", "DINAS", "SKMJ", "SURAT_TUGAS"]),
+  type: zod.enum(["IJIN", "DINAS", "SKMJ", "SURAT_TUGAS"]),
+  nomorSurat: zod.string().nullish(),
+  perihal: zod.string().nullish(),
+  tanggal: zod.string(),
+  status: zod.enum(["pending", "approved", "rejected"]),
+  keterangan: zod.string().nullish(),
+  createdAt: zod.string(),
+});
+
+/**
+ * @summary Update document status
+ */
+export const UpdateDocumentParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateDocumentBody = zod.object({
+  status: zod.enum(["pending", "approved", "rejected"]),
+});
+
+export const UpdateDocumentResponse = zod.object({
+  id: zod.number(),
+  employeeId: zod.number(),
+  employee: zod
+    .object({
+      id: zod.number(),
+      nama: zod.string(),
+      nopek: zod.string(),
+      foto: zod.string().nullish(),
+      jabatan: zod.string().nullish(),
+      departemen: zod.string().nullish(),
+      fungsi: zod.string().nullish(),
+      lokasi_kerja: zod.string().nullish(),
+      nomor_telepon: zod.string().nullish(),
+      status_pekerja: zod
+        .enum([
+          "Organik",
+          "TAD",
+          "TKJP",
+          "Security",
+          "Mitra Kerja",
+          "Driver",
+          "CS",
+          "Gardener",
+        ])
+        .nullish(),
+      status_bekerja: zod
+        .enum(["Aktif", "Mutasi", "Pensiun", "PHK", "Mengundurkan Diri"])
+        .nullish(),
+      createdAt: zod.string(),
+    })
+    .optional(),
+  type: zod.enum(["IJIN", "DINAS", "SKMJ", "SURAT_TUGAS"]),
   nomorSurat: zod.string().nullish(),
   perihal: zod.string().nullish(),
   tanggal: zod.string(),
@@ -493,9 +552,7 @@ export const DeleteDocumentResponse = zod.object({
  * @summary Get document counts by type
  */
 export const GetDocumentSummaryResponse = zod.object({
-  SP3S: zod.number(),
-  SIJ: zod.number(),
-  CUTI: zod.number(),
+  IJIN: zod.number(),
   DINAS: zod.number(),
   SKMJ: zod.number(),
   SURAT_TUGAS: zod.number(),
@@ -709,6 +766,7 @@ export const GetComplaintsResponseItem = zod.object({
   namaPelanggan: zod.string(),
   kontakPelanggan: zod.string().nullish(),
   kategori: zod.enum(["produk", "layanan", "pengiriman", "lainnya"]),
+  jenisPelanggan: zod.enum(["perorangan", "SPBU", "industri"]),
   judul: zod.string(),
   deskripsi: zod.string(),
   status: zod.enum(["baru", "diproses", "selesai", "ditolak"]),
@@ -716,6 +774,9 @@ export const GetComplaintsResponseItem = zod.object({
   tanggal: zod.string(),
   penangananOleh: zod.string().nullish(),
   catatanPenanganan: zod.string().nullish(),
+  spbuNumber: zod.string().nullish(),
+  spbuName: zod.string().nullish(),
+  industryName: zod.string().nullish(),
   createdAt: zod.string(),
 });
 export const GetComplaintsResponse = zod.array(GetComplaintsResponseItem);
@@ -727,6 +788,7 @@ export const CreateComplaintBody = zod.object({
   namaPelanggan: zod.string(),
   kontakPelanggan: zod.string().nullish(),
   kategori: zod.enum(["produk", "layanan", "pengiriman", "lainnya"]),
+  jenisPelanggan: zod.enum(["perorangan", "SPBU", "industri"]),
   judul: zod.string(),
   deskripsi: zod.string(),
   status: zod.enum(["baru", "diproses", "selesai", "ditolak"]),
@@ -734,6 +796,9 @@ export const CreateComplaintBody = zod.object({
   tanggal: zod.string(),
   penangananOleh: zod.string().nullish(),
   catatanPenanganan: zod.string().nullish(),
+  spbuNumber: zod.string().nullish(),
+  spbuName: zod.string().nullish(),
+  industryName: zod.string().nullish(),
 });
 
 /**
@@ -748,6 +813,7 @@ export const GetComplaintResponse = zod.object({
   namaPelanggan: zod.string(),
   kontakPelanggan: zod.string().nullish(),
   kategori: zod.enum(["produk", "layanan", "pengiriman", "lainnya"]),
+  jenisPelanggan: zod.enum(["perorangan", "SPBU", "industri"]),
   judul: zod.string(),
   deskripsi: zod.string(),
   status: zod.enum(["baru", "diproses", "selesai", "ditolak"]),
@@ -755,6 +821,9 @@ export const GetComplaintResponse = zod.object({
   tanggal: zod.string(),
   penangananOleh: zod.string().nullish(),
   catatanPenanganan: zod.string().nullish(),
+  spbuNumber: zod.string().nullish(),
+  spbuName: zod.string().nullish(),
+  industryName: zod.string().nullish(),
   createdAt: zod.string(),
 });
 
@@ -769,6 +838,7 @@ export const UpdateComplaintBody = zod.object({
   namaPelanggan: zod.string(),
   kontakPelanggan: zod.string().nullish(),
   kategori: zod.enum(["produk", "layanan", "pengiriman", "lainnya"]),
+  jenisPelanggan: zod.enum(["perorangan", "SPBU", "industri"]),
   judul: zod.string(),
   deskripsi: zod.string(),
   status: zod.enum(["baru", "diproses", "selesai", "ditolak"]),
@@ -776,6 +846,9 @@ export const UpdateComplaintBody = zod.object({
   tanggal: zod.string(),
   penangananOleh: zod.string().nullish(),
   catatanPenanganan: zod.string().nullish(),
+  spbuNumber: zod.string().nullish(),
+  spbuName: zod.string().nullish(),
+  industryName: zod.string().nullish(),
 });
 
 export const UpdateComplaintResponse = zod.object({
@@ -783,6 +856,7 @@ export const UpdateComplaintResponse = zod.object({
   namaPelanggan: zod.string(),
   kontakPelanggan: zod.string().nullish(),
   kategori: zod.enum(["produk", "layanan", "pengiriman", "lainnya"]),
+  jenisPelanggan: zod.enum(["perorangan", "SPBU", "industri"]),
   judul: zod.string(),
   deskripsi: zod.string(),
   status: zod.enum(["baru", "diproses", "selesai", "ditolak"]),
@@ -790,6 +864,9 @@ export const UpdateComplaintResponse = zod.object({
   tanggal: zod.string(),
   penangananOleh: zod.string().nullish(),
   catatanPenanganan: zod.string().nullish(),
+  spbuNumber: zod.string().nullish(),
+  spbuName: zod.string().nullish(),
+  industryName: zod.string().nullish(),
   createdAt: zod.string(),
 });
 
@@ -819,6 +896,55 @@ export const GetUsersResponseItem = zod.object({
   username: zod.string(),
   roleId: zod.number(),
   employeeId: zod.number().nullish(),
+  employee: zod
+    .object({
+      id: zod.number(),
+      nama: zod.string(),
+      nopek: zod.string(),
+      foto: zod.string().nullish(),
+      jabatan: zod.string().nullish(),
+      departemen: zod.string().nullish(),
+      fungsi: zod.string().nullish(),
+      lokasi_kerja: zod.string().nullish(),
+      nomor_telepon: zod.string().nullish(),
+      status_pekerja: zod
+        .enum([
+          "Organik",
+          "TAD",
+          "TKJP",
+          "Security",
+          "Mitra Kerja",
+          "Driver",
+          "CS",
+          "Gardener",
+        ])
+        .nullish(),
+      status_bekerja: zod
+        .enum(["Aktif", "Mutasi", "Pensiun", "PHK", "Mengundurkan Diri"])
+        .nullish(),
+      createdAt: zod.string(),
+    })
+    .optional(),
+  customerId: zod.number().nullish(),
+  customer: zod
+    .object({
+      id: zod.number().optional(),
+      nama: zod.string().optional(),
+      alamat: zod.string().optional(),
+      kontak: zod.string().optional(),
+      createdAt: zod.coerce.date().optional(),
+    })
+    .optional(),
+  sellerId: zod.number().nullish(),
+  seller: zod
+    .object({
+      id: zod.number().optional(),
+      nama: zod.string().optional(),
+      kontak: zod.string().optional(),
+      alamat: zod.string().optional(),
+      createdAt: zod.coerce.date().optional(),
+    })
+    .optional(),
   createdAt: zod.string(),
   updatedAt: zod.string(),
 });
@@ -836,6 +962,55 @@ export const CreateUserResponse = zod.object({
   username: zod.string(),
   roleId: zod.number(),
   employeeId: zod.number().nullish(),
+  employee: zod
+    .object({
+      id: zod.number(),
+      nama: zod.string(),
+      nopek: zod.string(),
+      foto: zod.string().nullish(),
+      jabatan: zod.string().nullish(),
+      departemen: zod.string().nullish(),
+      fungsi: zod.string().nullish(),
+      lokasi_kerja: zod.string().nullish(),
+      nomor_telepon: zod.string().nullish(),
+      status_pekerja: zod
+        .enum([
+          "Organik",
+          "TAD",
+          "TKJP",
+          "Security",
+          "Mitra Kerja",
+          "Driver",
+          "CS",
+          "Gardener",
+        ])
+        .nullish(),
+      status_bekerja: zod
+        .enum(["Aktif", "Mutasi", "Pensiun", "PHK", "Mengundurkan Diri"])
+        .nullish(),
+      createdAt: zod.string(),
+    })
+    .optional(),
+  customerId: zod.number().nullish(),
+  customer: zod
+    .object({
+      id: zod.number().optional(),
+      nama: zod.string().optional(),
+      alamat: zod.string().optional(),
+      kontak: zod.string().optional(),
+      createdAt: zod.coerce.date().optional(),
+    })
+    .optional(),
+  sellerId: zod.number().nullish(),
+  seller: zod
+    .object({
+      id: zod.number().optional(),
+      nama: zod.string().optional(),
+      kontak: zod.string().optional(),
+      alamat: zod.string().optional(),
+      createdAt: zod.coerce.date().optional(),
+    })
+    .optional(),
   createdAt: zod.string(),
   updatedAt: zod.string(),
 });
@@ -852,6 +1027,55 @@ export const GetUserResponse = zod.object({
   username: zod.string(),
   roleId: zod.number(),
   employeeId: zod.number().nullish(),
+  employee: zod
+    .object({
+      id: zod.number(),
+      nama: zod.string(),
+      nopek: zod.string(),
+      foto: zod.string().nullish(),
+      jabatan: zod.string().nullish(),
+      departemen: zod.string().nullish(),
+      fungsi: zod.string().nullish(),
+      lokasi_kerja: zod.string().nullish(),
+      nomor_telepon: zod.string().nullish(),
+      status_pekerja: zod
+        .enum([
+          "Organik",
+          "TAD",
+          "TKJP",
+          "Security",
+          "Mitra Kerja",
+          "Driver",
+          "CS",
+          "Gardener",
+        ])
+        .nullish(),
+      status_bekerja: zod
+        .enum(["Aktif", "Mutasi", "Pensiun", "PHK", "Mengundurkan Diri"])
+        .nullish(),
+      createdAt: zod.string(),
+    })
+    .optional(),
+  customerId: zod.number().nullish(),
+  customer: zod
+    .object({
+      id: zod.number().optional(),
+      nama: zod.string().optional(),
+      alamat: zod.string().optional(),
+      kontak: zod.string().optional(),
+      createdAt: zod.coerce.date().optional(),
+    })
+    .optional(),
+  sellerId: zod.number().nullish(),
+  seller: zod
+    .object({
+      id: zod.number().optional(),
+      nama: zod.string().optional(),
+      kontak: zod.string().optional(),
+      alamat: zod.string().optional(),
+      createdAt: zod.coerce.date().optional(),
+    })
+    .optional(),
   createdAt: zod.string(),
   updatedAt: zod.string(),
 });
@@ -875,6 +1099,55 @@ export const UpdateUserResponse = zod.object({
   username: zod.string(),
   roleId: zod.number(),
   employeeId: zod.number().nullish(),
+  employee: zod
+    .object({
+      id: zod.number(),
+      nama: zod.string(),
+      nopek: zod.string(),
+      foto: zod.string().nullish(),
+      jabatan: zod.string().nullish(),
+      departemen: zod.string().nullish(),
+      fungsi: zod.string().nullish(),
+      lokasi_kerja: zod.string().nullish(),
+      nomor_telepon: zod.string().nullish(),
+      status_pekerja: zod
+        .enum([
+          "Organik",
+          "TAD",
+          "TKJP",
+          "Security",
+          "Mitra Kerja",
+          "Driver",
+          "CS",
+          "Gardener",
+        ])
+        .nullish(),
+      status_bekerja: zod
+        .enum(["Aktif", "Mutasi", "Pensiun", "PHK", "Mengundurkan Diri"])
+        .nullish(),
+      createdAt: zod.string(),
+    })
+    .optional(),
+  customerId: zod.number().nullish(),
+  customer: zod
+    .object({
+      id: zod.number().optional(),
+      nama: zod.string().optional(),
+      alamat: zod.string().optional(),
+      kontak: zod.string().optional(),
+      createdAt: zod.coerce.date().optional(),
+    })
+    .optional(),
+  sellerId: zod.number().nullish(),
+  seller: zod
+    .object({
+      id: zod.number().optional(),
+      nama: zod.string().optional(),
+      kontak: zod.string().optional(),
+      alamat: zod.string().optional(),
+      createdAt: zod.coerce.date().optional(),
+    })
+    .optional(),
   createdAt: zod.string(),
   updatedAt: zod.string(),
 });
@@ -888,4 +1161,110 @@ export const DeleteUserParams = zod.object({
 
 export const DeleteUserResponse = zod.object({
   message: zod.string(),
+});
+
+/**
+ * @summary Get semua pelanggan
+ */
+export const GetCustomersResponseItem = zod.object({
+  id: zod.number().optional(),
+  nama: zod.string().optional(),
+  alamat: zod.string().optional(),
+  kontak: zod.string().optional(),
+  createdAt: zod.coerce.date().optional(),
+});
+export const GetCustomersResponse = zod.array(GetCustomersResponseItem);
+
+/**
+ * @summary Tambah pelanggan
+ */
+export const CreateCustomerBody = zod.object({
+  nama: zod.string(),
+  alamat: zod.string().optional(),
+  kontak: zod.string().optional(),
+});
+
+/**
+ * @summary Update pelanggan
+ */
+export const UpdateCustomerParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateCustomerBody = zod.object({
+  nama: zod.string(),
+  alamat: zod.string().optional(),
+  kontak: zod.string().optional(),
+});
+
+export const UpdateCustomerResponse = zod.object({
+  id: zod.number().optional(),
+  nama: zod.string().optional(),
+  alamat: zod.string().optional(),
+  kontak: zod.string().optional(),
+  createdAt: zod.coerce.date().optional(),
+});
+
+/**
+ * @summary Hapus pelanggan
+ */
+export const DeleteCustomerParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const DeleteCustomerResponse = zod.object({
+  message: zod.string().optional(),
+});
+
+/**
+ * @summary Get semua penjual
+ */
+export const GetSellersResponseItem = zod.object({
+  id: zod.number().optional(),
+  nama: zod.string().optional(),
+  kontak: zod.string().optional(),
+  alamat: zod.string().optional(),
+  createdAt: zod.coerce.date().optional(),
+});
+export const GetSellersResponse = zod.array(GetSellersResponseItem);
+
+/**
+ * @summary Tambah penjual
+ */
+export const CreateSellerBody = zod.object({
+  nama: zod.string(),
+  kontak: zod.string().optional(),
+  alamat: zod.string().optional(),
+});
+
+/**
+ * @summary Update penjual
+ */
+export const UpdateSellerParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateSellerBody = zod.object({
+  nama: zod.string(),
+  kontak: zod.string().optional(),
+  alamat: zod.string().optional(),
+});
+
+export const UpdateSellerResponse = zod.object({
+  id: zod.number().optional(),
+  nama: zod.string().optional(),
+  kontak: zod.string().optional(),
+  alamat: zod.string().optional(),
+  createdAt: zod.coerce.date().optional(),
+});
+
+/**
+ * @summary Hapus penjual
+ */
+export const DeleteSellerParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const DeleteSellerResponse = zod.object({
+  message: zod.string().optional(),
 });

@@ -5,6 +5,8 @@ import {
   useUpdateUser,
   useDeleteUser,
   useGetRoles,
+  useGetCustomers,
+  useGetSellers
 } from "@workspace/api-client-react";
 import { useGetEmployees } from "@workspace/api-client-react";
 
@@ -14,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 
@@ -29,6 +32,8 @@ export default function UserManager() {
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
   const deleteUser = useDeleteUser();
+  const { data: customers } = useGetCustomers();
+  const { data: sellers } = useGetSellers();
 
   const [open, setOpen] = useState(false);
   const [editUser, setEditUser] = useState<any | null>(null);
@@ -37,8 +42,12 @@ export default function UserManager() {
     username: "",
     password: "",
     roleId: "",
-    employeeId: "", // ✅ NEW
+    employeeId: "",
   });
+
+  const selectedRole = roles?.find(r => r.id === Number(form.roleId));
+
+  const getRoleName = (roleId: number) => roles?.find((role) => role.id === roleId)?.name || "-";
 
   const resetForm = () => {
     setForm({ username: "", password: "", roleId: "", employeeId: "" });
@@ -54,7 +63,7 @@ export default function UserManager() {
             username: form.username,
             roleId: Number(form.roleId),
             employeeId: form.employeeId ? Number(form.employeeId) : undefined,
-            ...(form.password ? { password: form.password } : {}),
+            password: form.password || "",
           },
         });
         toast({ title: "User updated" });
@@ -127,10 +136,9 @@ export default function UserManager() {
                 <div>
                   <p className="font-semibold">{user.username}</p>
                   <p className="text-sm text-muted-foreground">
-                    Role: {user.roleName || "-"} | Pegawai: {user.employee?.nama || "-"}
+                    Role: {getRoleName(user.roleId)} | Pegawai: {user.employee?.nama || "-"}
                   </p>
                 </div>
-
                 <div className="flex gap-2">
                   <Button size="sm" variant="outline" onClick={() => handleEdit(user)}>
                     Edit
@@ -190,7 +198,58 @@ export default function UserManager() {
                 ))}
               </SelectContent>
             </Select>
-            
+
+            {(selectedRole?.name === "saler" || selectedRole?.name === "penjual") && (
+              <div className="space-y-2">
+                <Label>Pilih Penjual</Label>
+                <Select
+                  value={form.employeeId}
+                  onValueChange={(val) =>
+                    setForm({ ...form, employeeId: val })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih penjual" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sellers
+                      ?.filter((s): s is { id: number; nama?: string } => s?.id != null)
+                      .map((s) => (
+                        <SelectItem key={s.id} value={s.id.toString()}>
+                          {s.nama}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {selectedRole?.name === "pelanggan" && (
+              <div className="space-y-2">
+                <Label>Pilih Pelanggan</Label>
+                <Select
+                  value={form.employeeId}
+                  onValueChange={(val) =>
+                    setForm({ ...form, employeeId: val })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih pelanggan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {customers
+                      ?.filter((c): c is { id: number; nama?: string } => c?.id != null)
+                      .map((c) => (
+                        <SelectItem key={c.id} value={c.id.toString()}>
+                          {c.nama}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {selectedRole?.name !== "pelanggan" && selectedRole?.name !== "saler" && selectedRole?.name !== "admin" && (
             <Select
               value={form.employeeId}
               onValueChange={(v) => setForm({ ...form, employeeId: v })}
@@ -206,7 +265,9 @@ export default function UserManager() {
                 ))}
               </SelectContent>
             </Select>
+            )}
             
+
             <Button
               className="w-full"
               onClick={handleSubmit}

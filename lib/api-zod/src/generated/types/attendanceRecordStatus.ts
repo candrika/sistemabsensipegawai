@@ -11,7 +11,6 @@ export type AttendanceRecordStatus =
 
 export const AttendanceRecordStatus = {
   izin: "izin",
-  tidak_hadir: "tidak_hadir",
   cuti: "cuti",
   dinas: "dinas",
 } as const;

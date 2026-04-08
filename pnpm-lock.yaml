@@ -183,7 +183,7 @@ importers:
         version: 2.8.6
       drizzle-orm:
         specifier: 'catalog:'
-        version: 0.45.2(@types/pg@8.20.0)(pg@8.20.0)
+        version: 0.45.2
       express:
         specifier: ^5
         version: 5.2.1
@@ -4702,6 +4702,8 @@ snapshots:
       '@esbuild-kit/esm-loader': tsx@4.21.0
       esbuild: 0.27.3
       tsx: 4.21.0
+
+  drizzle-orm@0.45.2: {}
 
   drizzle-orm@0.45.2(@types/pg@8.20.0)(pg@8.20.0):
     optionalDependencies:

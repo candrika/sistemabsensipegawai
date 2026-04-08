@@ -5,9 +5,8 @@
  * Sistem Informasi Kepegawaian dan Status Kehadiran API
  * OpenAPI spec version: 0.1.0
  */
+import type { UpdateDocumentBodyStatus } from "./updateDocumentBodyStatus";
 
-export interface AttendanceSummary {
-  izin: number;
-  cuti: number;
-  dinas: number;
-}
+export type UpdateDocumentBody = {
+  status: UpdateDocumentBodyStatus;
+};

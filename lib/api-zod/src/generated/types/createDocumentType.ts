@@ -10,9 +10,7 @@ export type CreateDocumentType =
   (typeof CreateDocumentType)[keyof typeof CreateDocumentType];
 
 export const CreateDocumentType = {
-  SP3S: "SP3S",
-  SIJ: "SIJ",
-  CUTI: "CUTI",
+  IJIN: "IJIN",
   DINAS: "DINAS",
   SKMJ: "SKMJ",
   SURAT_TUGAS: "SURAT_TUGAS",

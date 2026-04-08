@@ -5,6 +5,7 @@
  * Sistem Informasi Kepegawaian dan Status Kehadiran API
  * OpenAPI spec version: 0.1.0
  */
+import type { CreateComplaintJenisPelanggan } from "./createComplaintJenisPelanggan";
 import type { CreateComplaintKategori } from "./createComplaintKategori";
 import type { CreateComplaintPrioritas } from "./createComplaintPrioritas";
 import type { CreateComplaintStatus } from "./createComplaintStatus";
@@ -13,6 +14,7 @@ export interface CreateComplaint {
   namaPelanggan: string;
   kontakPelanggan?: string | null;
   kategori: CreateComplaintKategori;
+  jenisPelanggan: CreateComplaintJenisPelanggan;
   judul: string;
   deskripsi: string;
   status: CreateComplaintStatus;
@@ -20,4 +22,7 @@ export interface CreateComplaint {
   tanggal: string;
   penangananOleh?: string | null;
   catatanPenanganan?: string | null;
+  spbuNumber?: string | null;
+  spbuName?: string | null;
+  industryName?: string | null;
 }

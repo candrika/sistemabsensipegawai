@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, attendanceTable, employeesTable, insertAttendanceSchema } from "@workspace/db";
-import { eq, count, and, sql } from "drizzle-orm";
+import { eq, count, and, lte, gte } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -10,7 +10,7 @@ router.get("/attendance/summary", async (req, res) => {
       .select({ status: attendanceTable.status, count: count() })
       .from(attendanceTable)
       .groupBy(attendanceTable.status);
-    const summary = { izin: 0, tidak_hadir: 0, cuti: 0, dinas: 0 };
+    const summary = { izin: 0, cuti: 0, dinas: 0 };
     for (const row of rows) {
       if (row.status in summary) {
         (summary as any)[row.status] = Number(row.count);
@@ -27,11 +27,11 @@ router.get("/attendance", async (req, res) => {
   try {
     const { status, date } = req.query as { status?: string; date?: string };
     const conditions = [];
-    if (status && ["izin", "tidak_hadir", "cuti", "dinas"].includes(status)) {
+    if (status && ["izin", "cuti", "dinas"].includes(status)) {
       conditions.push(eq(attendanceTable.status, status as any));
     }
     if (date) {
-      conditions.push(eq(attendanceTable.tanggal, date));
+      conditions.push(and(lte(attendanceTable.tglMulai, date), gte(attendanceTable.tglAkhir, date)) as any);
     }
 
     const records = await db
@@ -39,7 +39,9 @@ router.get("/attendance", async (req, res) => {
         id: attendanceTable.id,
         employeeId: attendanceTable.employeeId,
         status: attendanceTable.status,
-        tanggal: attendanceTable.tanggal,
+        tglMulai: attendanceTable.tglMulai,
+        tglAkhir: attendanceTable.tglAkhir,
+        dokumenPendukung: attendanceTable.dokumenPendukung,
         alasan: attendanceTable.alasan,
         keterangan: attendanceTable.keterangan,
         createdAt: attendanceTable.createdAt,
@@ -56,7 +58,7 @@ router.get("/attendance", async (req, res) => {
       .from(attendanceTable)
       .leftJoin(employeesTable, eq(attendanceTable.employeeId, employeesTable.id))
       .where(conditions.length > 0 ? and(...conditions) : undefined)
-      .orderBy(attendanceTable.tanggal);
+      .orderBy(attendanceTable.tglMulai);
 
     res.json(records.map(r => ({
       ...r,

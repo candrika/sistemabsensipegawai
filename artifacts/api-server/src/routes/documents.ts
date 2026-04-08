@@ -10,7 +10,7 @@ router.get("/documents/summary", async (req, res) => {
       .select({ type: documentsTable.type, count: count() })
       .from(documentsTable)
       .groupBy(documentsTable.type);
-    const summary = { SP3S: 0, SIJ: 0, CUTI: 0, DINAS: 0, SKMJ: 0, SURAT_TUGAS: 0 };
+    const summary = { IJIN: 0, DINAS: 0, SKMJ: 0, SURAT_TUGAS: 0 };
     for (const row of rows) {
       if (row.type in summary) {
         (summary as any)[row.type] = Number(row.count);
@@ -26,7 +26,7 @@ router.get("/documents/summary", async (req, res) => {
 router.get("/documents", async (req, res) => {
   try {
     const { type } = req.query as { type?: string };
-    const validTypes = ["SP3S", "SIJ", "CUTI", "DINAS", "SKMJ", "SURAT_TUGAS"];
+    const validTypes = ["IJIN", "DINAS", "SKMJ", "SURAT_TUGAS"];
     const conditions = [];
     if (type && validTypes.includes(type)) {
       conditions.push(eq(documentsTable.type, type as any));
@@ -122,6 +122,30 @@ router.post("/documents", async (req, res) => {
     });
   } catch (err) {
     req.log.error({ err }, "Failed to create document");
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+router.patch("/documents/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+    const { status } = req.body;
+    if (!status || !["pending", "approved", "rejected"].includes(status)) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
+    const [updated] = await db
+      .update(documentsTable)
+      .set({ status: status as any })
+      .where(eq(documentsTable.id, id))
+      .returning();
+    if (!updated) return res.status(404).json({ message: "Document not found" });
+    res.json({
+      ...updated,
+      createdAt: updated.createdAt.toISOString(),
+    });
+  } catch (err) {
+    req.log.error({ err }, "Failed to update document");
     res.status(500).json({ message: "Internal server error" });
   }
 });
