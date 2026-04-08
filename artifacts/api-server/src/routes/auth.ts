@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db, usersTable, rolesTable, permissionsTable, rolePermissionsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
+import bcrypt from "bcrypt";
 
 const router: IRouter = Router();
 
@@ -25,7 +26,7 @@ router.post("/auth/login", async (req, res) => {
       .leftJoin(rolesTable, eq(usersTable.roleId, rolesTable.id))
       .where(eq(usersTable.username, username));
 
-    if (!user || user.password !== password) {
+    if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ message: "Username atau password salah" });
     }
 
@@ -73,7 +74,7 @@ router.get("/auth/me", async (req, res) => {
       .leftJoin(rolesTable, eq(usersTable.roleId, rolesTable.id))
       .where(eq(usersTable.username, username));
 
-    if (!user || user.password !== password) {
+    if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
