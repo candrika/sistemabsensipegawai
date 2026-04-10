@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   useGetAttendanceRecords,
   getGetAttendanceRecordsQueryKey,
@@ -55,21 +55,115 @@ export default function Presensi() {
     tgl_akhir_cuti: "",
     dokumen_pendukung: "",
     alasan: "",
-    keterangan: ""
+    keterangan: "",
+    file: null as File | null
   });
+
+  const [isDragging, setIsDragging] = useState(false);
+  const [filePreview, setFilePreview] = useState<{ base64: string; type: string; name: string } | null>(null);
 
   const filteredRecords = Array.isArray(records)
     ? records.filter(r => filterStatus === "all" || r.status === filterStatus)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     : [];
 
-  useEffect(() => {
-    return () => {
-      if (documentPreview?.url) {
-        URL.revokeObjectURL(documentPreview.url);
+  // Cleanup objectURL saat form ditutup
+  const cleanupPreview = () => {
+    setFilePreview(null);
+  };
+
+  const compressFile = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target?.result as string;
+        
+        // Jika file adalah gambar, compress menggunakan Canvas
+        if (file.type.startsWith('image/')) {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d')!;
+            
+            // Resize ke max 600px width
+            const maxWidth = 600;
+            const scale = maxWidth / img.width;
+            canvas.width = maxWidth;
+            canvas.height = img.height * scale;
+            
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            const compressed = canvas.toDataURL('image/jpeg', 0.6); // 60% quality
+            
+            if (compressed.length > 512 * 1024) { // 512KB limit for images
+              reject(new Error('File terlalu besar setelah kompresi'));
+            } else {
+              resolve(compressed);
+            }
+          };
+          img.onerror = () => reject(new Error('Gagal membaca gambar'));
+          img.src = content;
+        } else {
+          // Untuk non-image (PDF, Word, Excel), cek ukuran
+          if (content.length > 1024 * 1024) { // 1MB limit
+            reject(new Error('File terlalu besar (>1MB)'));
+          } else {
+            resolve(content);
+          }
+        }
+      };
+      reader.onerror = () => reject(new Error('Gagal membaca file'));
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFileChange = async (file: File | null) => {
+    if (file) {
+      try {
+        const base64 = await compressFile(file);
+        setFilePreview({
+          base64,
+          type: file.type,
+          name: file.name
+        });
+        setFormData(prev => ({
+          ...prev,
+          file,
+          dokumen_pendukung: base64
+        }));
+      } catch (err) {
+        toast({
+          title: "Gagal",
+          description: err instanceof Error ? err.message : "Gagal memproses file",
+          variant: "destructive"
+        });
       }
-    };
-  }, [documentPreview]);
+    } else {
+      setFilePreview(null);
+      setFormData(prev => ({
+        ...prev,
+        file: null,
+        dokumen_pendukung: ""
+      }));
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      handleFileChange(files[0]);
+    }
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,7 +207,7 @@ export default function Presensi() {
       queryClient.invalidateQueries({ queryKey: getGetAttendanceRecordsQueryKey() });
       queryClient.invalidateQueries({ queryKey: getGetDocumentsQueryKey({ type: documentType }) });
       setIsFormOpen(false);
-      setFormData({ ...formData, employeeId: "", alasan: "", keterangan: "", status: "izin" as AttendanceRecordStatus, tgl_mulai_cuti: "", tgl_akhir_cuti: "", dokumen_pendukung: "" });
+      setFormData({ employeeId: "", alasan: "", keterangan: "", status: "izin" as AttendanceRecordStatus, tgl_mulai_cuti: "", tgl_akhir_cuti: "", dokumen_pendukung: "", tanggal: new Date().toISOString().split('T')[0], file: null });
       setDocumentPreview(null);
     } catch (err) {
       toast({ title: "Gagal", description: "Terjadi kesalahan saat menyimpan", variant: "destructive" });
@@ -140,6 +234,20 @@ export default function Presensi() {
 
   const parseDocumentMeta = (value?: string | null) => {
     if (!value) return null;
+    
+    // Check if it's a base64 data URL
+    if (value.startsWith('data:')) {
+      const parts = value.split(',');
+      const mimeType = parts[0].match(/data:([^;]+)/)?.[1] || 'application/octet-stream';
+      const ext = mimeType.split('/')[1] || 'file';
+      return {
+        name: `dokumen.${ext}`,
+        type: mimeType,
+        data: value
+      };
+    }
+    
+    // Try to parse as JSON (old format)
     try {
       const parsed = JSON.parse(value);
       if (parsed?.name) {
@@ -298,7 +406,12 @@ export default function Presensi() {
       </Card>
 
       {/* Input Form Dialog */}
-      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+      <Dialog open={isFormOpen} onOpenChange={(open) => {
+        if (!open) {
+          cleanupPreview();
+        }
+        setIsFormOpen(open);
+      }}>
         <DialogContent className="sm:max-w-2xl p-0 overflow-hidden border-0 shadow-2xl flex flex-col max-h-[90vh]">
 
           {/* HEADER (tetap) */}
@@ -457,63 +570,71 @@ export default function Presensi() {
                       <FileText className="h-4 w-4 text-muted-foreground" />
                       Dokumen Pendukung
                     </Label>
-                    <div className="relative">
-                      <Input
+                    <div
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      className={`relative rounded-xl border-2 border-dashed transition-all duration-200 p-6 text-center ${
+                        isDragging
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border/50 bg-muted/20 hover:border-primary/50'
+                      }`}
+                    >
+                      <input
                         type="file"
                         id="dokumen_pendukung"
-                        className="bg-muted/30 h-11 border-border/50 focus:border-primary/50 transition-colors file:bg-primary/10 file:text-primary file:border-0 file:rounded-md file:mr-3 file:px-3 file:py-1 file:text-sm file:font-medium file:hover:bg-primary/20 file:transition-colors"
-                        onChange={e => {
-                          if (e.target.files && e.target.files[0]) {
-                            const file = e.target.files[0];
-                            const url = URL.createObjectURL(file);
-                            const reader = new FileReader();
-                            reader.onload = () => {
-                              setFormData({
-                                ...formData,
-                                dokumen_pendukung: JSON.stringify({
-                                  name: file.name,
-                                  type: file.type,
-                                  data: reader.result,
-                                }),
-                              });
-                              setDocumentPreview({ name: file.name, type: file.type, url });
-                            };
-                            reader.readAsDataURL(file);
-                          } else {
-                            setFormData({ ...formData, dokumen_pendukung: "" });
-                            setDocumentPreview(null);
-                          }
-                        }}
+                        className="hidden"
+                        onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
+                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx,.xls"
                       />
-                      {formData.dokumen_pendukung && (
-                        <div className="mt-2 space-y-2">
-                          <div className="text-sm text-muted-foreground flex items-center gap-2">
-                            <CheckCircle2 className="h-4 w-4 text-green-500" />
-                            File dipilih: {formData.dokumen_pendukung}
-                          </div>
-                          {documentPreview && documentPreview.type.startsWith("image/") && (
-                            <img
-                              src={documentPreview.url}
-                              alt={documentPreview.name}
-                              className="max-h-40 w-full rounded-xl border border-border/50 object-contain"
-                            />
-                          )}
-                          {documentPreview && documentPreview.type === "application/pdf" && (
-                            <object
-                              data={documentPreview.url}
-                              type="application/pdf"
-                              className="w-full h-64 rounded-xl border border-border/50"
-                            >
-                              <p className="text-sm text-muted-foreground">Pratinjau PDF tidak tersedia di browser ini.</p>
-                            </object>
-                          )}
-                          {documentPreview && !documentPreview.type.startsWith("image/") && documentPreview.type !== "application/pdf" && (
-                            <div className="rounded-xl border border-border/50 bg-muted/50 p-3 text-sm text-muted-foreground">
-                              Pratinjau tidak tersedia untuk jenis file ini.
-                            </div>
+                      <label htmlFor="dokumen_pendukung" className="cursor-pointer block">
+                        <div className="flex flex-col items-center justify-center gap-3">
+                          {filePreview ? (
+                            <>
+                              {filePreview.type.startsWith('image/') ? (
+                                <img
+                                  src={filePreview.base64}
+                                  alt={filePreview.name}
+                                  className="h-20 w-20 rounded-lg object-cover"
+                                />
+                              ) : (
+                                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                                  <FileText className="h-6 w-6" />
+                                </div>
+                              )}
+                              <div>
+                                <p className="font-semibold text-sm text-foreground">{formData.file?.name}</p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {(formData.file?.size || 0) / 1024 / 1024 > 1
+                                    ? `${((formData.file?.size || 0) / 1024 / 1024).toFixed(2)} MB (compressed)`
+                                    : `${((formData.file?.size || 0) / 1024).toFixed(2)} KB (compressed)`
+                                  }
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handleFileChange(null);
+                                }}
+                                className="text-xs text-destructive hover:text-destructive/80 font-medium mt-2"
+                              >
+                                Hapus File
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                                <FileText className="h-6 w-6" />
+                              </div>
+                              <div>
+                                <p className="font-semibold text-sm text-foreground">Pilih atau Drag & Drop</p>
+                                <p className="text-xs text-muted-foreground mt-1">PDF, Word, Excel, atau Gambar (Max 5MB)</p>
+                              </div>
+                            </>
                           )}
                         </div>
-                      )}
+                      </label>
                     </div>
                   </div>
 
