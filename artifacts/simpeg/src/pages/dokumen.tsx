@@ -3,7 +3,7 @@ import {
   useGetDocumentSummary,
   getGetDocumentSummaryQueryKey,
 } from "@workspace/api-client-react";
-import { FileText, ChevronRight, Folders } from "lucide-react";
+import { FileText, ChevronRight, Folders, ClipboardList, Briefcase } from "lucide-react";
 
 export default function Dokumen() {
   const { data: documentSummary, isLoading } = useGetDocumentSummary({
@@ -26,6 +26,63 @@ export default function Dokumen() {
         </div>
         <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
           <Folders className="h-6 w-6" />
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-border/60 bg-card shadow-sm p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-base font-bold text-foreground">Rekap Dokumen</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Total seluruh arsip surat dari menu Presensi & Dokumen
+            </p>
+          </div>
+          <span className="text-2xl font-extrabold text-primary">
+            {isLoading
+              ? "…"
+              : (documentSummary?.IJIN ?? 0) +
+                (documentSummary?.DINAS ?? 0) +
+                (documentSummary?.SKMJ ?? 0) +
+                (documentSummary?.SURAT_TUGAS ?? 0)}
+          </span>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+          <div className="flex items-center gap-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 px-3 py-2.5 border border-blue-100 dark:border-blue-900/40">
+            <ClipboardList className="h-4 w-4 text-blue-600" />
+            <div className="flex-1">
+              <div className="text-xs text-muted-foreground">Dari Presensi (IZIN)</div>
+              <div className="font-bold text-blue-700 dark:text-blue-300">
+                {isLoading ? "…" : `${documentSummary?.IJIN ?? 0} surat`}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 px-3 py-2.5 border border-emerald-100 dark:border-emerald-900/40">
+            <ClipboardList className="h-4 w-4 text-emerald-600" />
+            <div className="flex-1">
+              <div className="text-xs text-muted-foreground">Dari Presensi (DINAS)</div>
+              <div className="font-bold text-emerald-700 dark:text-emerald-300">
+                {isLoading ? "…" : `${documentSummary?.DINAS ?? 0} surat`}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 rounded-lg bg-violet-50 dark:bg-violet-950/30 px-3 py-2.5 border border-violet-100 dark:border-violet-900/40">
+            <Briefcase className="h-4 w-4 text-violet-600" />
+            <div className="flex-1">
+              <div className="text-xs text-muted-foreground">Dokumen-list (SKMJ)</div>
+              <div className="font-bold text-violet-700 dark:text-violet-300">
+                {isLoading ? "…" : `${documentSummary?.SKMJ ?? 0} surat`}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 rounded-lg bg-rose-50 dark:bg-rose-950/30 px-3 py-2.5 border border-rose-100 dark:border-rose-900/40">
+            <Briefcase className="h-4 w-4 text-rose-600" />
+            <div className="flex-1">
+              <div className="text-xs text-muted-foreground">Dokumen-list (Surat Tugas)</div>
+              <div className="font-bold text-rose-700 dark:text-rose-300">
+                {isLoading ? "…" : `${documentSummary?.SURAT_TUGAS ?? 0} surat`}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
