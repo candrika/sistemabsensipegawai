@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { useSettings } from "@/lib/settings-context";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,11 @@ import { Building2, Eye, EyeOff, LogIn, ShieldCheck } from "lucide-react";
 
 export default function Login() {
   const { login } = useAuth();
+  const { settings } = useSettings();
+  const appName = settings?.appName || "SI Kepegawaian";
+  const appSubtitle = settings?.appSubtitle || "ENTERPRISE";
+  const appDescription = settings?.appDescription || "Platform terintegrasi untuk pengelolaan data pegawai, kehadiran, dokumen, inventori, dan keluhan pelanggan.";
+  const logoPath = settings?.logoPath;
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [username, setUsername] = useState("");
@@ -39,12 +45,16 @@ export default function Login() {
       {/* Left side - Branding */}
       <div className="hidden lg:flex flex-col justify-between w-1/2 p-12 text-white">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center">
-            <Building2 className="h-6 w-6 text-white" />
+          <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center overflow-hidden">
+            {logoPath ? (
+              <img src={logoPath} alt="logo" className="h-full w-full object-cover" />
+            ) : (
+              <Building2 className="h-6 w-6 text-white" />
+            )}
           </div>
           <div>
-            <p className="font-extrabold text-lg tracking-tight">SI Kepegawaian</p>
-            <p className="text-white/50 text-xs">ENTERPRISE</p>
+            <p className="font-extrabold text-lg tracking-tight">{appName}</p>
+            <p className="text-white/50 text-xs">{appSubtitle}</p>
           </div>
         </div>
 
@@ -55,7 +65,7 @@ export default function Login() {
               <span className="text-indigo-400">Kepegawaian</span>
             </h1>
             <p className="text-white/60 mt-4 text-lg leading-relaxed">
-              Platform terintegrasi untuk pengelolaan data pegawai, kehadiran, dokumen, inventori, dan keluhan pelanggan.
+              {appDescription}
             </p>
           </div>
 
@@ -81,11 +91,15 @@ export default function Login() {
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="flex lg:hidden items-center gap-3 mb-8 justify-center">
-            <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center">
-              <Building2 className="h-6 w-6 text-white" />
+            <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center overflow-hidden">
+              {logoPath ? (
+                <img src={logoPath} alt="logo" className="h-full w-full object-cover" />
+              ) : (
+                <Building2 className="h-6 w-6 text-white" />
+              )}
             </div>
             <div>
-              <p className="font-extrabold text-lg text-white">SI Kepegawaian</p>
+              <p className="font-extrabold text-lg text-white">{appName}</p>
             </div>
           </div>
 

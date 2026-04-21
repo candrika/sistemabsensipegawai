@@ -4,6 +4,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "@/components/layout";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
+import { SettingsProvider } from "@/lib/settings-context";
+import PengaturanAplikasi from "@/pages/pengaturan-aplikasi";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import Karyawan from "@/pages/karyawan";
@@ -78,6 +80,7 @@ function Router() {
               <Route path="/keluhan" component={Keluhan} />
               <Route path="/role-manager" component={RoleManager} />
               <Route path="/user-manager" component={UserManager} />
+              <Route path="/pengaturan-aplikasi" component={PengaturanAplikasi} />
               <Route component={NotFound} />
             </Switch>
           </Layout>
@@ -92,10 +95,12 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <Router />
-          </WouterRouter>
-          <Toaster />
+          <SettingsProvider>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+              <Router />
+            </WouterRouter>
+            <Toaster />
+          </SettingsProvider>
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>

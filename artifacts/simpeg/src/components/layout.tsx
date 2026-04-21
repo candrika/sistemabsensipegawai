@@ -12,11 +12,13 @@ import {
   LogOut,
   UserCog,
   DollarSign,
-  Coins
+  Coins,
+  Settings2
 } from "lucide-react";
 import { ReactNode, useState } from "react";
 import { Button } from "./ui/button";
 import { useAuth } from "@/lib/auth-context";
+import { useSettings } from "@/lib/settings-context";
 
 const ROLE_COLORS: Record<string, string> = {
   admin: "from-violet-500 to-indigo-600",
@@ -43,12 +45,14 @@ const ALL_NAV = [
   { name: "Keluhan Pelanggan", href: "/keluhan", icon: MessageSquareWarning, roles: ["admin", "saler", "pelanggan"] },
   { name: "Role & Permission", href: "/role-manager", icon: ShieldCheck, roles: ["admin"] },
   { name: "User Manager", href: "/user-manager", icon: UserCog, roles: ["admin"] },
+  { name: "Pengaturan Aplikasi", href: "/pengaturan-aplikasi", icon: Settings2, roles: ["admin"] },
 ];
 
 export function Layout({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, logout } = useAuth();
+  const { settings } = useSettings();
 
   const roleName = user?.roleName ?? "pegawai";
   const gradientColor = ROLE_COLORS[roleName] ?? "from-indigo-500 to-purple-600";
@@ -75,12 +79,16 @@ export function Layout({ children }: { children: ReactNode }) {
         {/* Header */}
         <div className="h-20 flex items-center px-6 bg-black/20 border-b border-white/10">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 bg-gradient-to-br from-primary to-indigo-400 rounded-xl flex items-center justify-center shadow-lg">
-              <Building2 className="h-5 w-5 text-white" />
+            <div className="h-10 w-10 bg-gradient-to-br from-primary to-indigo-400 rounded-xl flex items-center justify-center shadow-lg overflow-hidden">
+              {settings?.logoPath ? (
+                <img src={settings.logoPath} alt="logo" className="h-full w-full object-cover" />
+              ) : (
+                <Building2 className="h-5 w-5 text-white" />
+              )}
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white">SI Kepegawaian</h1>
-              <p className="text-[10px] text-indigo-300 font-bold mt-1 uppercase">Enterprise</p>
+              <h1 className="text-xl font-bold text-white">{settings?.appName || "SI Kepegawaian"}</h1>
+              <p className="text-[10px] text-indigo-300 font-bold mt-1 uppercase">{settings?.appSubtitle || "Enterprise"}</p>
             </div>
           </div>
         </div>
