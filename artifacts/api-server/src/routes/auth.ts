@@ -25,12 +25,7 @@ router.post("/auth/login", async (req, res) => {
       .from(usersTable)
       .innerJoin(rolesTable, eq(usersTable.roleId, rolesTable.id))
       .where(eq(usersTable.username, username));
-    
-    // console.log(user)
-    // const hashedPassword = await bcrypt.hash(password, 10);
-    console.log("INPUT PASSWORD:", await bcrypt.hash(password, 10));
-    console.log("HASH DB:", user.password);
-    
+
     if (!user) {
       req.log.warn({ username }, "User not found");
       return res.status(401).json({ message: "Username atau password salah" });

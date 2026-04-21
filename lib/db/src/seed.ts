@@ -1,4 +1,5 @@
 import "dotenv/config";
+import bcrypt from "bcrypt";
 import { db } from "./index";
 import {
   rolesTable,
@@ -180,15 +181,26 @@ async function seed() {
     .select()
     .from(usersTable)
     .where(eq(usersTable.username, "admin"));
+  const hashedAdminPassword = await bcrypt.hash("admin123", 10);
   if (existingAdmin.length === 0) {
     await db.insert(usersTable).values({
       username: "admin",
-      password: "admin123",
+      password: hashedAdminPassword,
       roleId: adminRole.id,
     });
     console.log("Default admin user created (username: admin, password: admin123).");
   } else {
-    console.log("Admin user already exists.");
+    // Re-hash kalau password lama masih plain text (bukan format bcrypt $2)
+    const current = existingAdmin[0].password;
+    if (!/^\$2[aby]\$/.test(current)) {
+      await db
+        .update(usersTable)
+        .set({ password: hashedAdminPassword })
+        .where(eq(usersTable.id, existingAdmin[0].id));
+      console.log("Admin password upgraded to bcrypt hash.");
+    } else {
+      console.log("Admin user already exists.");
+    }
   }
 
   console.log("Seed completed successfully.");
