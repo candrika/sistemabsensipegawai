@@ -6,15 +6,9 @@ import {
   documentsTable,
   insertAttendanceSchema,
 } from "@workspace/db";
-import { eq, count, and, lte, gte } from "drizzle-orm";
+import { eq, count, and, lte, gte, sql, or, inArray } from "drizzle-orm";
 
 const router: IRouter = Router();
-
-const documentTypeMap: Record<string, string> = {
-  izin: "IJIN",
-  cuti: "IJIN",
-  dinas: "DINAS",
-};
 
 router.get("/attendance/summary", async (req, res) => {
   try {
@@ -46,6 +40,8 @@ router.get("/attendance", async (req, res) => {
     };
 
     const conditions = [];
+    const isAttendanceStatus =
+      !status || ["izin", "cuti", "dinas", "absen"].includes(status);
 
     if (status && ["izin", "cuti", "dinas", "absen"].includes(status)) {
       conditions.push(eq(attendanceTable.status, status as any));
@@ -60,7 +56,7 @@ router.get("/attendance", async (req, res) => {
       );
     }
 
-    const records = await db
+    const records = !isAttendanceStatus ? [] : await db
       .select({
         id: attendanceTable.id,
         employeeId: attendanceTable.employeeId,
@@ -71,6 +67,7 @@ router.get("/attendance", async (req, res) => {
         alasan: attendanceTable.alasan,
         keterangan: attendanceTable.keterangan,
         createdAt: attendanceTable.createdAt,
+        source: sql<string>`'attendance'`,
 
         employee: {
           id: employeesTable.id,
@@ -86,14 +83,69 @@ router.get("/attendance", async (req, res) => {
       )
       .where(conditions.length ? and(...conditions) : undefined);
 
+    // Synthesize SKMJ / SURAT_TUGAS from documents into attendance view
+    let docDerived: any[] = [];
+    const wantSkmj = !status || status === "skmj";
+    const wantSurat = !status || status === "surat_tugas";
+    const wantedTypes: Array<"SKMJ" | "SURAT_TUGAS"> = [];
+    if (wantSkmj) wantedTypes.push("SKMJ");
+    if (wantSurat) wantedTypes.push("SURAT_TUGAS");
+
+    if (wantedTypes.length > 0) {
+      const docConds: any[] = [inArray(documentsTable.type, wantedTypes as any)];
+      if (date) {
+        docConds.push(
+          and(
+            lte(documentsTable.tanggal, date),
+            or(
+              sql`${documentsTable.expirationDate} IS NULL`,
+              gte(documentsTable.expirationDate, date)
+            )
+          )
+        );
+      }
+
+      docDerived = await db
+        .select({
+          id: documentsTable.id,
+          employeeId: documentsTable.employeeId,
+          status: sql<string>`LOWER(${documentsTable.type})`,
+          tglMulai: documentsTable.tanggal,
+          tglAkhir: sql<string>`COALESCE(${documentsTable.expirationDate}::text, ${documentsTable.tanggal})`,
+          dokumenPendukung: documentsTable.filePath,
+          alasan: documentsTable.perihal,
+          keterangan: documentsTable.keterangan,
+          createdAt: documentsTable.createdAt,
+          source: sql<string>`'document'`,
+          employee: {
+            id: employeesTable.id,
+            nama: employeesTable.nama,
+            nopek: employeesTable.nopek,
+            createdAt: employeesTable.createdAt,
+          },
+        })
+        .from(documentsTable)
+        .leftJoin(
+          employeesTable,
+          eq(documentsTable.employeeId, employeesTable.id)
+        )
+        .where(and(...docConds));
+    }
+
+    const combined = [...records, ...docDerived];
+
     res.json(
-      records.map((r) => ({
+      combined.map((r) => ({
         ...r,
-        createdAt: r.createdAt.toISOString(),
-        employee: r.employee
+        createdAt:
+          r.createdAt instanceof Date ? r.createdAt.toISOString() : r.createdAt,
+        employee: r.employee?.id
           ? {
               ...r.employee,
-              createdAt: r.employee.createdAt.toISOString(),
+              createdAt:
+                r.employee.createdAt instanceof Date
+                  ? r.employee.createdAt.toISOString()
+                  : r.employee.createdAt,
             }
           : null,
       }))
@@ -117,7 +169,6 @@ router.post("/attendance", async (req, res) => {
 
     const data = parsed.data;
 
-    // ✅ FIX HARD: pastikan semua field sesuai DB
     const payload = {
       employeeId: data.employeeId,
       status: data.status,
@@ -125,8 +176,6 @@ router.post("/attendance", async (req, res) => {
       tglAkhir: data.tglAkhir,
       alasan: data.alasan ?? null,
       keterangan: data.keterangan ?? null,
-
-      // ⚠️ penting: kolom DB sekarang TEXT
       dokumenPendukung:
         typeof data.dokumenPendukung === "string"
           ? data.dokumenPendukung
@@ -145,20 +194,9 @@ router.post("/attendance", async (req, res) => {
       .from(employeesTable)
       .where(eq(employeesTable.id, record.employeeId));
 
-    // ✅ AUTO CREATE DOCUMENT (NO approval_status)
-    if (record.status in documentTypeMap) {
-      await db.insert(documentsTable).values({
-        employeeId: record.employeeId,
-        type: documentTypeMap[record.status],
-        nomorSurat: null,
-        perihal: record.alasan ?? "-",
-        tanggal: record.tglMulai,
-        expirationDate: record.tglAkhir,
-        status: "pending",
-        keterangan: record.keterangan ?? null,
-        filePath: record.dokumenPendukung ?? null,
-      });
-    }
+    // Note: izin/cuti/dinas attendance entries are surfaced in the
+    // documents listing via a synthetic union in GET /documents (no
+    // duplicate row inserted into the documents table).
 
     res.status(201).json({
       ...record,
@@ -170,11 +208,8 @@ router.post("/attendance", async (req, res) => {
           }
         : null,
     });
-
   } catch (err) {
-    console.error("🔥 CREATE ATTENDANCE ERROR:", err);
     req.log.error({ err }, "Failed to create attendance record");
-
     res.status(500).json({
       message: err instanceof Error ? err.message : "Internal server error",
     });
