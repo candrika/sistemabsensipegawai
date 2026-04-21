@@ -9,10 +9,16 @@ router.get("/employees/stats", async (req, res) => {
     const [stats] = await db
       .select({
         total: sql<number>`count(*)::int`,
+        // Status Bekerja counts
         aktif: sql<number>`count(*) filter (where status_bekerja = 'Aktif')::int`,
         mutasi: sql<number>`count(*) filter (where status_bekerja = 'Mutasi')::int`,
+        pensiun: sql<number>`count(*) filter (where status_bekerja = 'Pensiun')::int`,
+        phk: sql<number>`count(*) filter (where status_bekerja = 'PHK')::int`,
+        mengundurkan_diri: sql<number>`count(*) filter (where status_bekerja = 'Mengundurkan Diri')::int`,
+        // Status Pekerja counts
         organik: sql<number>`count(*) filter (where status_pekerja = 'Organik')::int`,
-        tkjp: sql<number>`count(*) filter (where status_pekerja = 'TKJP')::int`,
+        tad: sql<number>`count(*) filter (where status_pekerja = 'TAD')::int`,
+        tkjp: sql<number>`count(*) filter (where status_pekerja = 'Medical')::int`,
         security: sql<number>`count(*) filter (where status_pekerja = 'Security')::int`,
         mitra_kerja: sql<number>`count(*) filter (where status_pekerja = 'Mitra Kerja')::int`,
         driver: sql<number>`count(*) filter (where status_pekerja = 'Driver')::int`,

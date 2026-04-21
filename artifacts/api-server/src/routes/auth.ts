@@ -23,10 +23,22 @@ router.post("/auth/login", async (req, res) => {
         employeeId: usersTable.employeeId,
       })
       .from(usersTable)
-      .leftJoin(rolesTable, eq(usersTable.roleId, rolesTable.id))
+      .innerJoin(rolesTable, eq(usersTable.roleId, rolesTable.id))
       .where(eq(usersTable.username, username));
+    
+    // console.log(user)
+    // const hashedPassword = await bcrypt.hash(password, 10);
+    console.log("INPUT PASSWORD:", await bcrypt.hash(password, 10));
+    console.log("HASH DB:", user.password);
+    
+    if (!user) {
+      req.log.warn({ username }, "User not found");
+      return res.status(401).json({ message: "Username atau password salah" });
+    }
 
-    if (!user || !(await bcrypt.compare(password, user.password))) {
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
+      req.log.warn({ username }, "Password mismatch");
       return res.status(401).json({ message: "Username atau password salah" });
     }
 
@@ -74,7 +86,14 @@ router.get("/auth/me", async (req, res) => {
       .leftJoin(rolesTable, eq(usersTable.roleId, rolesTable.id))
       .where(eq(usersTable.username, username));
 
-    if (!user || !(await bcrypt.compare(password, user.password))) {
+    if (!user) {
+      req.log.warn({ username }, "User not found");
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
+      req.log.warn({ username }, "Password mismatch");
       return res.status(401).json({ message: "Unauthorized" });
     }
 

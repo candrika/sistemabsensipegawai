@@ -17,6 +17,7 @@ import RoleManager from "@/pages/role-manager";
 import UserManager from "@/pages/user-manager";
 import Penjual from "@/pages/penjualan";
 import Pelanggan from "@/pages/pelanggan";
+import RealisasiAnggaran from "@/pages/realisasi-anggaran";
 import Login from "@/pages/login";
 
 const queryClient = new QueryClient({
@@ -73,6 +74,7 @@ function Router() {
               <Route path="/dokumen" component={Dokumen} />
               <Route path="/dokumen/:type" component={DokumenList} />
               <Route path="/inventori" component={Inventori} />
+              <Route path="/realisasi-anggaran" component={RealisasiAnggaran} />
               <Route path="/keluhan" component={Keluhan} />
               <Route path="/role-manager" component={RoleManager} />
               <Route path="/user-manager" component={UserManager} />

@@ -18,7 +18,7 @@ export type StatusPekerja = (typeof StatusPekerja)[keyof typeof StatusPekerja];
 export const StatusPekerja = {
   Organik: "Organik",
   TAD: "TAD",
-  TKJP: "TKJP",
+  Medical: "Medical",
   Security: "Security",
   Mitra_Kerja: "Mitra Kerja",
   Driver: "Driver",
@@ -82,6 +82,7 @@ export type AttendanceRecordStatus =
 
 export const AttendanceRecordStatus = {
   izin: "izin",
+  absen: "absen",
   cuti: "cuti",
   dinas: "dinas",
 } as const;
@@ -135,6 +136,7 @@ export interface CreateAttendanceRecord {
 
 export interface AttendanceSummary {
   izin: number;
+  absen: number;
   cuti: number;
   dinas: number;
 }

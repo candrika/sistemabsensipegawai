@@ -3,7 +3,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { employeesTable } from "./employees";
 
-export const attendanceStatusEnum = ["izin", "cuti", "dinas"] as const;
+export const attendanceStatusEnum = ["izin", "cuti", "dinas", "absen"] as const;
 
 export const attendanceTable = pgTable("attendance", {
   id: serial("id").primaryKey(),
@@ -15,6 +15,7 @@ export const attendanceTable = pgTable("attendance", {
   alasan: text("alasan"),
   keterangan: text("keterangan"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  // approvalStatus: text("approval_status", { enum: ["pending", "approved", "rejected"] }).default("pending").notNull(),
 });
 
 export const insertAttendanceSchema = createInsertSchema(attendanceTable).omit({ id: true, createdAt: true });

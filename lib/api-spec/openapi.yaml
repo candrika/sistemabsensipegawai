@@ -189,7 +189,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [izin, tidak_hadir, cuti, dinas]
+            enum: [izin, absen, cuti, dinas]
         - name: date
           in: query
           schema:
@@ -1032,7 +1032,7 @@ components:
 
     StatusPekerja:
       type: string
-      enum: [Organik, TAD, TKJP, Security, Mitra Kerja, Driver, CS, Gardener]
+      enum: [Organik, TAD, Medical, Security, Mitra Kerja, Driver, CS, Gardener]
 
     StatusBekerja:
       type: string
@@ -1160,7 +1160,7 @@ components:
           $ref: "#/components/schemas/Employee"
         status:
           type: string
-          enum: [izin, cuti, dinas]
+          enum: [izin, absen, cuti, dinas]
         tglMulai:
           type: string
         tglAkhir:
@@ -1228,7 +1228,7 @@ components:
           type: integer
         status:
           type: string
-          enum: [izin, cuti, dinas]
+          enum: [izin, absen, cuti, dinas]
         tglMulai:
           type: string
         tglAkhir:
@@ -1253,12 +1253,15 @@ components:
       properties:
         izin:
           type: integer
+        absen:
+          type: integer
         cuti:
           type: integer
         dinas:
           type: integer
       required:
         - izin
+        - absen
         - cuti
         - dinas
 

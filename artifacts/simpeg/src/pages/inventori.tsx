@@ -18,7 +18,7 @@ import {
   InventoryTransactionTipe,
   CreateInventoryItem,
   CreateInventoryTransaction
-} from "@workspace/api-client-react/src/generated/api.schemas";
+} from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -232,7 +232,7 @@ export default function Inventori() {
                   Tambah Barang
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px]">
+              <DialogContent className="sm:max-w-125">
                 <DialogHeader>
                   <DialogTitle className="text-xl">{editingItem ? 'Edit Barang' : 'Tambah Barang Baru'}</DialogTitle>
                 </DialogHeader>
@@ -338,7 +338,7 @@ export default function Inventori() {
                   <TableHead>Kategori</TableHead>
                   <TableHead>Satuan</TableHead>
                   <TableHead className="text-right">Stok</TableHead>
-                  <TableHead className="w-[120px] pr-6"></TableHead>
+                  <TableHead className="w-30 pr-6"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -396,7 +396,7 @@ export default function Inventori() {
                   Catat Transaksi
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px]">
+              <DialogContent className="sm:max-w-125">
                 <DialogHeader>
                   <DialogTitle className="text-xl">Catat Transaksi Baru</DialogTitle>
                 </DialogHeader>
@@ -555,7 +555,7 @@ export default function Inventori() {
                         </span>
                       </TableCell>
                       <TableCell>{trx.penanggungJawab || "-"}</TableCell>
-                      <TableCell className="text-muted-foreground max-w-[200px] truncate">{trx.keterangan || "-"}</TableCell>
+                      <TableCell className="text-muted-foreground max-w-50 truncate">{trx.keterangan || "-"}</TableCell>
                       <TableCell className="text-right pr-6">
                         <Button 
                           variant="ghost" 

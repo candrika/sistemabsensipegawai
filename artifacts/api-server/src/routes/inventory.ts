@@ -1,22 +1,26 @@
 import { Router, type IRouter } from "express";
 import { db, inventoryItemsTable, inventoryTransactionsTable, insertInventoryItemSchema, insertInventoryTransactionSchema } from "@workspace/db";
-import { eq, and, count, sum } from "drizzle-orm";
+import { eq, and, sum } from "drizzle-orm";
 
 const router: IRouter = Router();
 
 router.get("/inventory/summary", async (req, res) => {
   try {
-    const [{ total }] = await db.select({ total: count() }).from(inventoryItemsTable);
     const masukRows = await db.select({ total: sum(inventoryTransactionsTable.jumlah) })
       .from(inventoryTransactionsTable)
       .where(eq(inventoryTransactionsTable.tipe, "masuk"));
     const keluarRows = await db.select({ total: sum(inventoryTransactionsTable.jumlah) })
       .from(inventoryTransactionsTable)
       .where(eq(inventoryTransactionsTable.tipe, "keluar"));
+    
+    const totalMasuk = Number(masukRows[0]?.total ?? 0);
+    const totalKeluar = Number(keluarRows[0]?.total ?? 0);
+    const totalItems = totalMasuk - totalKeluar;
+
     res.json({
-      totalItems: Number(total),
-      totalMasuk: Number(masukRows[0]?.total ?? 0),
-      totalKeluar: Number(keluarRows[0]?.total ?? 0),
+      totalItems: totalItems,
+      totalMasuk: totalMasuk,
+      totalKeluar: totalKeluar,
     });
   } catch (err) {
     req.log.error({ err }, "Failed to get inventory summary");

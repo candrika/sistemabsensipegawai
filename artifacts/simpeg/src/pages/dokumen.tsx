@@ -1,18 +1,17 @@
 import { Link } from "wouter";
-import { 
-  useGetDocumentSummary, 
-  getGetDocumentSummaryQueryKey 
+import {
+  useGetDocumentSummary,
+  getGetDocumentSummaryQueryKey,
 } from "@workspace/api-client-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { FileText, ChevronRight, Folders } from "lucide-react";
 
 export default function Dokumen() {
-  const { data: summary, isLoading } = useGetDocumentSummary({
-    query: { queryKey: getGetDocumentSummaryQueryKey() }
+  const { data: documentSummary, isLoading } = useGetDocumentSummary({
+    query: { queryKey: getGetDocumentSummaryQueryKey() },
   });
 
   const docTypes = [
-    { type: "IZIN", label: "Izin", desc: "Surat Izin, Cuti, dan Perjalanan (Otomatis)", color: "stat-card-blue" },
+    { type: "IJIN", label: "Izin", desc: "Surat Izin, Cuti, dan Perjalanan (Otomatis)", color: "stat-card-blue" },
     { type: "DINAS", label: "Dinas", desc: "Surat Keterangan Dinas Luar (Otomatis)", color: "stat-card-green" },
     { type: "SKMJ", label: "SKMJ", desc: "Surat Keterangan Mengikuti Jabatan", color: "stat-card-purple" },
     { type: "SURAT_TUGAS", label: "Surat Tugas", desc: "Pemberian Tugas Khusus", color: "stat-card-red" },
@@ -32,7 +31,7 @@ export default function Dokumen() {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {docTypes.map((doc) => {
-          const count = summary ? (summary as any)[doc.type] : 0;
+          const count = documentSummary?.[doc.type] ?? 0;
 
           return (
             <Link key={doc.type} href={`/dokumen/${doc.type}`}>

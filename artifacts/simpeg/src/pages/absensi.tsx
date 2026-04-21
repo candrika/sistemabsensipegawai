@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   useGetAttendanceRecords,
   getGetAttendanceRecordsQueryKey,
@@ -20,11 +20,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Filter, CalendarCheck, ClipboardList, UserCheck, CheckCircle2, FileText } from "lucide-react";
 import { format } from "date-fns";
+import { useDropzone } from "react-dropzone";
 
 const STATUS_CONFIG = {
   izin: { label: "Izin", color: "bg-blue-50 text-blue-700 border-blue-200", dot: "bg-blue-500" },
   cuti: { label: "Cuti", color: "bg-amber-50 text-amber-700 border-amber-200", dot: "bg-amber-500" },
   dinas: { label: "Dinas Luar", color: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" },
+  absen: { label: "Absen", color: "bg-red-50 text-red-700 border-red-200", dot: "bg-red-500" }
 };
 
 export default function Presensi() {
@@ -55,162 +57,83 @@ export default function Presensi() {
     tgl_akhir_cuti: "",
     dokumen_pendukung: "",
     alasan: "",
-    keterangan: "",
-    file: null as File | null
+    keterangan: ""
   });
-
-  const [isDragging, setIsDragging] = useState(false);
-  const [filePreview, setFilePreview] = useState<{ base64: string; type: string; name: string } | null>(null);
 
   const filteredRecords = Array.isArray(records)
     ? records.filter(r => filterStatus === "all" || r.status === filterStatus)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     : [];
 
-  // Cleanup objectURL saat form ditutup
-  const cleanupPreview = () => {
-    setFilePreview(null);
-  };
-
-  const compressFile = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const content = e.target?.result as string;
-        
-        // Jika file adalah gambar, compress menggunakan Canvas
-        if (file.type.startsWith('image/')) {
-          const img = new Image();
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d')!;
-            
-            // Resize ke max 600px width
-            const maxWidth = 600;
-            const scale = maxWidth / img.width;
-            canvas.width = maxWidth;
-            canvas.height = img.height * scale;
-            
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            const compressed = canvas.toDataURL('image/jpeg', 0.6); // 60% quality
-            
-            if (compressed.length > 512 * 1024) { // 512KB limit for images
-              reject(new Error('File terlalu besar setelah kompresi'));
-            } else {
-              resolve(compressed);
-            }
-          };
-          img.onerror = () => reject(new Error('Gagal membaca gambar'));
-          img.src = content;
-        } else {
-          // Untuk non-image (PDF, Word, Excel), cek ukuran
-          if (content.length > 1024 * 1024) { // 1MB limit
-            reject(new Error('File terlalu besar (>1MB)'));
-          } else {
-            resolve(content);
-          }
-        }
-      };
-      reader.onerror = () => reject(new Error('Gagal membaca file'));
-      reader.readAsDataURL(file);
-    });
-  };
-
-  const handleFileChange = async (file: File | null) => {
-    if (file) {
-      try {
-        const base64 = await compressFile(file);
-        setFilePreview({
-          base64,
-          type: file.type,
-          name: file.name
-        });
-        setFormData(prev => ({
-          ...prev,
-          file,
-          dokumen_pendukung: base64
-        }));
-      } catch (err) {
-        toast({
-          title: "Gagal",
-          description: err instanceof Error ? err.message : "Gagal memproses file",
-          variant: "destructive"
-        });
+  useEffect(() => {
+    return () => {
+      if (documentPreview?.url) {
+        URL.revokeObjectURL(documentPreview.url);
       }
-    } else {
-      setFilePreview(null);
-      setFormData(prev => ({
-        ...prev,
-        file: null,
-        dokumen_pendukung: ""
-      }));
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      handleFileChange(files[0]);
-    }
-  };
+    };
+  }, [documentPreview]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.employeeId || !formData.status || !formData.tanggal) return;
+
+    if (!formData.employeeId || !formData.status) return;
 
     try {
-      // Create attendance record first
-      const attendanceResult = await createMutation.mutateAsync({
+      // ✅ FIX: pastikan tidak pernah kirim string kosong
+      const tglMulai =
+        formData.tgl_mulai_cuti && formData.tgl_mulai_cuti !== ""
+          ? formData.tgl_mulai_cuti
+          : formData.tanggal;
+
+      const tglAkhir =
+        formData.tgl_akhir_cuti && formData.tgl_akhir_cuti !== ""
+          ? formData.tgl_akhir_cuti
+          : formData.tanggal;
+
+      await createMutation.mutateAsync({
         data: {
           employeeId: parseInt(formData.employeeId),
-          status: formData.status as import("@workspace/api-client-react").AttendanceRecordStatus,
-          tglMulai: formData.tgl_mulai_cuti,
-          tglAkhir: formData.tgl_akhir_cuti,
+          status: formData.status,
+          tglMulai,
+          tglAkhir,
           dokumenPendukung: formData.dokumen_pendukung || null,
           alasan: formData.alasan || null,
-          keterangan: formData.keterangan || null
-        } as any // Forcing type correctly since backend schema was updated
+          keterangan: formData.keterangan || null,
+        },
       });
 
-      // Auto-create document based on attendance status
-      const documentType = formData.status === "dinas" ? "DINAS" : "IJIN";
-      const perihalMap = {
-        izin: "Surat Izin",
-        cuti: "Surat Cuti",
-        dinas: "Surat Keterangan Dinas Luar"
-      };
-
-      await createDocumentMutation.mutateAsync({
-        data: {
-          employeeId: parseInt(formData.employeeId),
-          type: documentType,
-          nomorSurat: null,
-          perihal: perihalMap[formData.status] || "Surat Izin/Cuti",
-          tanggal: formData.tanggal,
-          status: "pending",
-          keterangan: formData.keterangan || null
-        }
+      toast({
+        title: "Berhasil",
+        description: "Data presensi berhasil dibuat",
       });
 
-      toast({ title: "Berhasil", description: "Data presensi dan dokumen berhasil dibuat" });
-      queryClient.invalidateQueries({ queryKey: getGetAttendanceRecordsQueryKey() });
-      queryClient.invalidateQueries({ queryKey: getGetDocumentsQueryKey({ type: documentType }) });
+      queryClient.invalidateQueries({
+        queryKey: getGetAttendanceRecordsQueryKey(),
+      });
+
       setIsFormOpen(false);
-      setFormData({ employeeId: "", alasan: "", keterangan: "", status: "izin" as AttendanceRecordStatus, tgl_mulai_cuti: "", tgl_akhir_cuti: "", dokumen_pendukung: "", tanggal: new Date().toISOString().split('T')[0], file: null });
+
+      setFormData({
+        employeeId: "",
+        status: "izin",
+        tanggal: new Date().toISOString().split("T")[0],
+        tgl_mulai_cuti: "",
+        tgl_akhir_cuti: "",
+        dokumen_pendukung: "",
+        alasan: "",
+        keterangan: "",
+      });
+
       setDocumentPreview(null);
-    } catch (err) {
-      toast({ title: "Gagal", description: "Terjadi kesalahan saat menyimpan", variant: "destructive" });
+
+    } catch (err: any) {
+      console.error("CREATE ERROR:", err);
+
+      toast({
+        title: "Gagal",
+        description: err?.response?.data?.message || "Terjadi kesalahan",
+        variant: "destructive",
+      });
     }
   };
 
@@ -232,35 +155,59 @@ export default function Presensi() {
     }, {} as Record<string, number>)
     : {};
 
-  const parseDocumentMeta = (value?: string | null) => {
-    if (!value) return null;
+  const parseDocumentMeta = (dokumenPendukung:any) => {
+    if (!dokumenPendukung) return null;
+    console.log("Parsing document meta:", dokumenPendukung);
     
-    // Check if it's a base64 data URL
-    if (value.startsWith('data:')) {
-      const parts = value.split(',');
-      const mimeType = parts[0].match(/data:([^;]+)/)?.[1] || 'application/octet-stream';
-      const ext = mimeType.split('/')[1] || 'file';
-      return {
-        name: `dokumen.${ext}`,
-        type: mimeType,
-        data: value
-      };
+    let json_parse = JSON.parse(dokumenPendukung)
+    let string_doc = json_parse.data;
+    let name_doc   = json_parse.name;
+
+    const isBase64 = string_doc.startsWith("data:");
+    const name = isBase64 ? "Dokumen Pendukung" : name_doc;
+    const data = isBase64 ? string_doc : null;
+
+    return { name, data };
+  };
+
+  const handlePreviewPdf = (base64Data: string) => {
+    const byteCharacters = atob(base64Data.split(",")[1]);
+    const byteNumbers = new Array(byteCharacters.length).fill(0).map((_, i) => byteCharacters.charCodeAt(i));
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: "application/pdf" });
+    const url = URL.createObjectURL(blob);
+    setDocumentPreview({ name: base64Data, type: "application/pdf", url });
+  };
+
+  const onDrop = (acceptedFiles: File[]) => {
+    if (acceptedFiles.length > 0) {
+      const file = acceptedFiles[0];
+      setDocumentPreview({
+        name: file.name,
+        type: file.type,
+        url: URL.createObjectURL(file),
+      });
     }
-    
-    // Try to parse as JSON (old format)
-    try {
-      const parsed = JSON.parse(value);
-      if (parsed?.name) {
-        return {
-          name: parsed.name as string,
-          type: parsed.type as string | undefined,
-          data: parsed.data as string | null,
-        };
+  };
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: "application/pdf,image/*",
+  });
+
+  const handleSubmit = async () => {
+    if (documentPreview) {
+      const formData = new FormData();
+      formData.append("file", documentPreview);
+
+      try {
+        await createDocumentMutation.mutateAsync(formData);
+        toast({ title: "Dokumen berhasil diunggah", status: "success" });
+        setDocumentPreview(null);
+      } catch (error) {
+        toast({ title: "Gagal mengunggah dokumen", status: "error" });
       }
-    } catch {
-      return { name: value, type: undefined, data: null };
     }
-    return null;
   };
 
   return (
@@ -384,7 +331,8 @@ export default function Presensi() {
                           onClick={() => setSelectedRecord(record)}
                           className="text-sm font-medium text-primary hover:text-primary/80 underline"
                         >
-                          {parseDocumentMeta(record.dokumenPendukung)?.name || record.dokumenPendukung}
+                          Preview
+                          {/* {parseDocumentMeta(record.dokumenPendukung)?.name || record.dokumenPendukung} */}
                         </button>
                       ) : (
                         <span className="text-sm text-muted-foreground">—</span>
@@ -406,12 +354,7 @@ export default function Presensi() {
       </Card>
 
       {/* Input Form Dialog */}
-      <Dialog open={isFormOpen} onOpenChange={(open) => {
-        if (!open) {
-          cleanupPreview();
-        }
-        setIsFormOpen(open);
-      }}>
+      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className="sm:max-w-2xl p-0 overflow-hidden border-0 shadow-2xl flex flex-col max-h-[90vh]">
 
           {/* HEADER (tetap) */}
@@ -492,6 +435,12 @@ export default function Presensi() {
                             Dinas Luar
                           </div>
                         </SelectItem>
+                        <SelectItem value="absen">
+                          <div className="flex items-center gap-2">
+                            <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                            Absen
+                          </div>
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -570,71 +519,63 @@ export default function Presensi() {
                       <FileText className="h-4 w-4 text-muted-foreground" />
                       Dokumen Pendukung
                     </Label>
-                    <div
-                      onDragOver={handleDragOver}
-                      onDragLeave={handleDragLeave}
-                      onDrop={handleDrop}
-                      className={`relative rounded-xl border-2 border-dashed transition-all duration-200 p-6 text-center ${
-                        isDragging
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border/50 bg-muted/20 hover:border-primary/50'
-                      }`}
-                    >
-                      <input
+                    <div className="relative">
+                      <Input
                         type="file"
                         id="dokumen_pendukung"
-                        className="hidden"
-                        onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
-                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx,.xls"
+                        className="bg-muted/30 h-11 border-border/50 focus:border-primary/50 transition-colors file:bg-primary/10 file:text-primary file:border-0 file:rounded-md file:mr-3 file:px-3 file:py-1 file:text-sm file:font-medium file:hover:bg-primary/20 file:transition-colors"
+                        onChange={e => {
+                          if (e.target.files && e.target.files[0]) {
+                            const file = e.target.files[0];
+                            const url = URL.createObjectURL(file);
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                              setFormData({
+                                ...formData,
+                                dokumen_pendukung: JSON.stringify({
+                                  name: file.name,
+                                  type: file.type,
+                                  data: reader.result,
+                                }),
+                              });
+                              setDocumentPreview({ name: file.name, type: file.type, url });
+                            };
+                            reader.readAsDataURL(file);
+                          } else {
+                            setFormData({ ...formData, dokumen_pendukung: "" });
+                            setDocumentPreview(null);
+                          }
+                        }}
                       />
-                      <label htmlFor="dokumen_pendukung" className="cursor-pointer block">
-                        <div className="flex flex-col items-center justify-center gap-3">
-                          {filePreview ? (
-                            <>
-                              {filePreview.type.startsWith('image/') ? (
-                                <img
-                                  src={filePreview.base64}
-                                  alt={filePreview.name}
-                                  className="h-20 w-20 rounded-lg object-cover"
-                                />
-                              ) : (
-                                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                                  <FileText className="h-6 w-6" />
-                                </div>
-                              )}
-                              <div>
-                                <p className="font-semibold text-sm text-foreground">{formData.file?.name}</p>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  {(formData.file?.size || 0) / 1024 / 1024 > 1
-                                    ? `${((formData.file?.size || 0) / 1024 / 1024).toFixed(2)} MB (compressed)`
-                                    : `${((formData.file?.size || 0) / 1024).toFixed(2)} KB (compressed)`
-                                  }
-                                </p>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  handleFileChange(null);
-                                }}
-                                className="text-xs text-destructive hover:text-destructive/80 font-medium mt-2"
-                              >
-                                Hapus File
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                                <FileText className="h-6 w-6" />
-                              </div>
-                              <div>
-                                <p className="font-semibold text-sm text-foreground">Pilih atau Drag & Drop</p>
-                                <p className="text-xs text-muted-foreground mt-1">PDF, Word, Excel, atau Gambar (Max 5MB)</p>
-                              </div>
-                            </>
+                      {formData.dokumen_pendukung && (
+                        <div className="mt-2 space-y-2">
+                          <div className="text-sm text-muted-foreground flex items-center gap-2">
+                            <CheckCircle2 className="h-4 w-4 text-green-500" />
+                            {/* File dipilih: {formData.dokumen_pendukung} */}
+                          </div>
+                          {documentPreview && documentPreview.type.startsWith("image/") && (
+                            <img
+                              src={documentPreview.url}
+                              alt={documentPreview.name}
+                              className="max-h-40 w-full rounded-xl border border-border/50 object-contain"
+                            />
+                          )}
+                          {documentPreview && documentPreview.type === "application/pdf" && (
+                            <object
+                              data={documentPreview.url}
+                              type="application/pdf"
+                              className="w-full h-64 rounded-xl border border-border/50"
+                            >
+                              <p className="text-sm text-muted-foreground">Pratinjau PDF tidak tersedia di browser ini.</p>
+                            </object>
+                          )}
+                          {documentPreview && !documentPreview.type.startsWith("image/") && documentPreview.type !== "application/pdf" && (
+                            <div className="rounded-xl border border-border/50 bg-muted/50 p-3 text-sm text-muted-foreground">
+                              Pratinjau tidak tersedia untuk jenis file ini.
+                            </div>
                           )}
                         </div>
-                      </label>
+                      )}
                     </div>
                   </div>
 
@@ -691,118 +632,196 @@ export default function Presensi() {
 
       <Dialog open={Boolean(selectedRecord)} onOpenChange={() => setSelectedRecord(null)}>
         <DialogContent className="sm:max-w-3xl p-0 overflow-hidden border-0 shadow-2xl flex flex-col max-h-[90vh]">
+
+          {/* HEADER */}
           <div className="bg-gradient-to-r from-slate-950 to-slate-900 p-6 text-white">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+
               <div>
                 <DialogHeader>
-                  <DialogTitle className="text-2xl font-bold">Detail Absensi</DialogTitle>
+                  <DialogTitle className="text-2xl font-bold">
+                    Detail Absensi
+                  </DialogTitle>
                 </DialogHeader>
-                <p className="text-sm text-slate-300">Ringkasan presensi dan dokumen pendukung yang sudah diunggah.</p>
+
+                <p className="text-sm text-slate-300">
+                  Ringkasan presensi dan dokumen pendukung yang sudah diunggah.
+                </p>
               </div>
+
               <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white shadow-sm">
                 <CheckCircle2 className="h-4 w-4 text-emerald-300" />
-                {selectedRecord ? STATUS_CONFIG[selectedRecord.status as keyof typeof STATUS_CONFIG]?.label : "Status"}
+                {selectedRecord
+                  ? STATUS_CONFIG[selectedRecord.status as keyof typeof STATUS_CONFIG]?.label
+                  : "Status"}
               </div>
+
             </div>
           </div>
+
+          {/* BODY */}
           <div className="p-6 overflow-y-auto flex-1 space-y-6 bg-background">
+
             {selectedRecord ? (
-              <>
-                <div className="grid gap-4 lg:grid-cols-[1.35fr_0.9fr]">
-                  <div className="space-y-4">
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="rounded-3xl border border-border/70 bg-muted p-4 shadow-sm">
-                        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Pegawai</p>
-                        <p className="mt-2 text-base font-semibold text-foreground">{selectedRecord.employee?.nama || `ID ${selectedRecord.employeeId}`}</p>
-                      </div>
-                      <div className="rounded-3xl border border-border/70 bg-muted p-4 shadow-sm">
-                        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">No. Pegawai</p>
-                        <p className="mt-2 text-base font-semibold text-foreground">{selectedRecord.employee?.nopek || '-'}</p>
-                      </div>
+              <div className="grid gap-4 lg:grid-cols-[1.35fr_0.9fr]">
+
+                {/* LEFT */}
+                <div className="space-y-4">
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+
+                    <div className="rounded-3xl border border-border/70 bg-muted p-4 shadow-sm">
+                      <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                        Pegawai
+                      </p>
+                      <p className="mt-2 text-base font-semibold text-foreground">
+                        {selectedRecord.employee?.nama || `ID ${selectedRecord.employeeId}`}
+                      </p>
                     </div>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="rounded-3xl border border-border/70 bg-muted p-4 shadow-sm">
-                        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Periode</p>
-                        <p className="mt-2 text-base font-semibold text-foreground">{selectedRecord.tglMulai} — {selectedRecord.tglAkhir}</p>
-                      </div>
-                      <div className="rounded-3xl border border-border/70 bg-muted p-4 shadow-sm">
-                        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Tanggal Pengajuan</p>
-                        <p className="mt-2 text-base font-semibold text-foreground">{format(new Date(selectedRecord.createdAt), 'dd MMM yyyy')}</p>
-                      </div>
+
+                    <div className="rounded-3xl border border-border/70 bg-muted p-4 shadow-sm">
+                      <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                        No. Pegawai
+                      </p>
+                      <p className="mt-2 text-base font-semibold text-foreground">
+                        {selectedRecord.employee?.nopek || "-"}
+                      </p>
                     </div>
-                    <div className="grid gap-4 lg:grid-cols-2">
-                      <div className="rounded-3xl border border-border/70 bg-muted p-4 shadow-sm">
-                        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Alasan</p>
-                        <p className="mt-2 text-sm text-foreground">{selectedRecord.alasan || '—'}</p>
-                      </div>
-                      <div className="rounded-3xl border border-border/70 bg-muted p-4 shadow-sm">
-                        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Keterangan</p>
-                        <p className="mt-2 text-sm text-foreground">{selectedRecord.keterangan || '—'}</p>
-                      </div>
-                    </div>
+
                   </div>
-                  <div className="rounded-3xl border border-border/70 bg-muted p-4 shadow-sm">
-                    <div className="flex items-center gap-3 border-b border-border/70 pb-4 mb-4">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                        <FileText className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Dokumen Pendukung</p>
-                        <p className="mt-1 text-sm font-semibold text-foreground">{parseDocumentMeta(selectedRecord.dokumenPendukung)?.name || selectedRecord.dokumenPendukung || 'Belum ada file'}</p>
-                      </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+
+                    <div className="rounded-3xl border border-border/70 bg-muted p-4 shadow-sm">
+                      <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                        Periode
+                      </p>
+                      <p className="mt-2 text-base font-semibold text-foreground">
+                        {selectedRecord.tglMulai} — {selectedRecord.tglAkhir}
+                      </p>
                     </div>
-                    {(() => {
-                      const documentMeta = parseDocumentMeta(selectedRecord.dokumenPendukung);
-                      if (!documentMeta?.data) {
-                        return (
-                          <div className="flex min-h-[16rem] items-center justify-center rounded-3xl border border-dashed border-border/50 bg-muted/50 text-center text-sm text-muted-foreground">
-                            {selectedRecord.dokumenPendukung ? 'Pratinjau tidak tersedia untuk jenis file ini.' : 'Tidak ada dokumen pendukung.'}
-                          </div>
-                        );
-                      }
 
-                      if (documentMeta.data.startsWith('data:image/')) {
-                        return (
-                          <img
-                            src={documentMeta.data}
-                            alt={documentMeta.name}
-                            className="h-[18rem] w-full rounded-3xl border border-border/50 object-contain"
-                          />
-                        );
-                      }
+                    <div className="rounded-3xl border border-border/70 bg-muted p-4 shadow-sm">
+                      <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                        Tanggal Pengajuan
+                      </p>
+                      <p className="mt-2 text-base font-semibold text-foreground">
+                        {selectedRecord.createdAt
+                          ? format(new Date(selectedRecord.createdAt), "dd MMM yyyy")
+                          : "-"}
+                      </p>
+                    </div>
 
-                      if (documentMeta.data.startsWith('data:application/pdf')) {
-                        return (
-                          <object
-                            data={documentMeta.data}
-                            type="application/pdf"
-                            className="h-[18rem] w-full rounded-3xl border border-border/50"
-                          >
-                            <div className="flex h-full items-center justify-center rounded-3xl border border-dashed border-border/50 bg-muted/50 text-center text-sm text-muted-foreground">
-                              Pratinjau PDF tidak tersedia.
-                            </div>
-                          </object>
-                        );
-                      }
+                  </div>
 
+                  <div className="grid gap-4 lg:grid-cols-2">
+
+                    <div className="rounded-3xl border border-border/70 bg-muted p-4 shadow-sm">
+                      <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                        Alasan
+                      </p>
+                      <p className="mt-2 text-sm text-foreground">
+                        {selectedRecord.alasan || "—"}
+                      </p>
+                    </div>
+
+                    <div className="rounded-3xl border border-border/70 bg-muted p-4 shadow-sm">
+                      <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                        Keterangan
+                      </p>
+                      <p className="mt-2 text-sm text-foreground">
+                        {selectedRecord.keterangan || "—"}
+                      </p>
+                    </div>
+
+                  </div>
+
+                </div>
+
+                {/* RIGHT */}
+                <div className="rounded-3xl border border-border/70 bg-muted p-4 shadow-sm">
+
+                  <div className="flex items-center gap-3 border-b border-border/70 pb-4 mb-4">
+
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                      <FileText className="h-5 w-5" />
+                    </div>
+
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                        Dokumen Pendukung
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-foreground">
+                        {parseDocumentMeta(selectedRecord.dokumenPendukung)?.name ||
+                          selectedRecord.dokumenPendukung ||
+                          "Belum ada file"}
+                      </p>
+                    </div>
+
+                  </div>
+
+                  {(() => {
+                    const documentMeta = parseDocumentMeta(selectedRecord.dokumenPendukung);
+
+                    if (!documentMeta?.data) {
                       return (
-                        <div className="flex min-h-[16rem] items-center justify-center rounded-3xl border border-dashed border-border/50 bg-muted/50 text-center text-sm text-muted-foreground">
-                          Pratinjau tidak tersedia untuk jenis file ini.
+                        <div className="flex min-h-64 items-center justify-center rounded-3xl border border-dashed border-border/50 bg-muted/50 text-center text-sm text-muted-foreground">
+                          {selectedRecord.dokumenPendukung
+                            ? "Pratinjau tidak tersedia untuk jenis file ini."
+                            : "Tidak ada dokumen pendukung."}
                         </div>
                       );
-                    })()}
-                  </div>
+                    }
+
+                    if (documentMeta.data.startsWith("data:image/")) {
+                      return (
+                        <img
+                          src={documentMeta.data}
+                          alt={documentMeta.name}
+                          className="h-72 w-full rounded-3xl border border-border/50 object-contain"
+                        />
+                      );
+                    }
+
+                    if (documentMeta.data.startsWith("data:application/pdf")) {
+                      return (
+                        <object
+                          data={documentMeta.data}
+                          type="application/pdf"
+                          className="h-72 w-full rounded-3xl border border-border/50"
+                        >
+                          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                            Pratinjau PDF tidak tersedia.
+                          </div>
+                        </object>
+                      );
+                    }
+
+                    return (
+                      <div className="flex min-h-64 items-center justify-center rounded-3xl border border-dashed border-border/50 bg-muted/50 text-center text-sm text-muted-foreground">
+                        Pratinjau tidak tersedia untuk jenis file ini.
+                      </div>
+                    );
+                  })()}
+
                 </div>
-              </>
+
+              </div>
             ) : (
-              <p className="text-sm text-muted-foreground">Pilih data absensi untuk melihat detail.</p>
+              <p className="text-sm text-muted-foreground">
+                Pilih data absensi untuk melihat detail.
+              </p>
             )}
+
           </div>
+
+          {/* FOOTER */}
           <DialogFooter className="border-t border-border/50 p-4">
             <Button type="button" variant="outline" onClick={() => setSelectedRecord(null)}>
               Tutup
             </Button>
           </DialogFooter>
+
         </DialogContent>
       </Dialog>
       

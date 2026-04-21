@@ -2,7 +2,7 @@ import { pgTable, text, serial, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
-export const STATUS_PEKERJA = ["Organik", "TAD", "TKJP", "Security", "Mitra Kerja", "Driver", "CS", "Gardener"] as const;
+export const STATUS_PEKERJA = ["Organik", "TAD", "Medical", "Security", "Mitra Kerja", "Driver", "CS", "Gardener"] as const;
 export const STATUS_BEKERJA = ["Aktif", "Mutasi", "Pensiun", "PHK", "Mengundurkan Diri"] as const;
 
 export type StatusPekerja = (typeof STATUS_PEKERJA)[number];

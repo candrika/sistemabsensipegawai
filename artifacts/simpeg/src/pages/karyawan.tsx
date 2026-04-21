@@ -4,15 +4,12 @@
 // ✅ Filter Status Pekerja → Button + Badge
 // ✅ Table tetap dipakai (tidak diubah ke card list)
 
-import { useState } from "react";
+import { useState, type ChangeEvent, type DragEvent } from "react";
 import { Link } from "wouter";
 import {
   useGetEmployees,
   getGetEmployeesQueryKey,
   useCreateEmployee,
-  useUpdateEmployee,
-  useDeleteEmployee,
-  getGetEmployeeStatsQueryKey,
   StatusPekerja,
   StatusBekerja
 } from "@workspace/api-client-react";
@@ -29,7 +26,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Search, Plus, Edit2, Trash2, ChevronRight, User } from "lucide-react";
 
-const STATUS_PEKERJA_OPTIONS: StatusPekerja[] = ["Organik", "TAD", "TKJP", "Security", "Mitra Kerja", "Driver", "CS", "Gardener"];
+const STATUS_PEKERJA_OPTIONS: StatusPekerja[] = ["Organik", "TAD", "Medical", "Security", "Mitra Kerja", "Driver", "CS", "Gardener"];
 const STATUS_BEKERJA_OPTIONS: StatusBekerja[] = ["Aktif", "Mutasi", "Pensiun", "PHK", "Mengundurkan Diri"];
 const LOKASI_KERJA_OPTIONS = ["IT Banjarmasin", "Depot Mini LPG"];
 
@@ -141,7 +138,7 @@ export default function Karyawan() {
     });
   };
 
-  const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFotoChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       processFoto(file);
@@ -243,19 +240,19 @@ export default function Karyawan() {
     }
   };
 
-  const handleDragOver = (e: React.DragEvent<HTMLLabelElement>) => {
+  const handleDragOver = (e: DragEvent<HTMLLabelElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
   };
 
-  const handleDragLeave = (e: React.DragEvent<HTMLLabelElement>) => {
+  const handleDragLeave = (e: DragEvent<HTMLLabelElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
   };
 
-  const handleDrop = (e: React.DragEvent<HTMLLabelElement>) => {
+  const handleDrop = (e: DragEvent<HTMLLabelElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
@@ -415,10 +412,10 @@ export default function Karyawan() {
           setFotoPreview(null);
         }
       }}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto p-0">
+        <DialogContent className="sm:max-w-150 max-h-[90vh] overflow-y-auto p-0">
           <form className="space-y-0 bg-card">
             {/* HEADER */}
-            <div className="bg-gradient-to-r from-slate-900 to-indigo-950 p-6 text-white sticky top-0 z-10">
+            <div className="bg-linear-to-r from-slate-900 to-indigo-950 p-6 text-white sticky top-0 z-10">
               <h2 className="text-lg font-bold">Tambah Karyawan Baru</h2>
               <p className="text-sm text-white/80 mt-1">Masukkan data karyawan yang akan ditambahkan ke sistem</p>
             </div>

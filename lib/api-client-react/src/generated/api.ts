@@ -3500,7 +3500,11 @@ export const getGetUserQueryOptions = <
 >(
   id: number,
   options?: {
-    query?: UseQueryOptions<Awaited<ReturnType<typeof getUser>>, TError, TData>;
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getUser>>,
+      TError,
+      TData
+    >;
     request?: SecondParameter<typeof customFetch>;
   },
 ) => {
@@ -3517,9 +3521,11 @@ export const getGetUserQueryOptions = <
     queryFn,
     enabled: !!id,
     ...queryOptions,
-  } as UseQueryOptions<Awaited<ReturnType<typeof getUser>>, TError, TData> & {
-    queryKey: QueryKey;
-  };
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getUser>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
 };
 
 export type GetUserQueryResult = NonNullable<
@@ -3537,7 +3543,11 @@ export function useGetUser<
 >(
   id: number,
   options?: {
-    query?: UseQueryOptions<Awaited<ReturnType<typeof getUser>>, TError, TData>;
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getUser>>,
+      TError,
+      TData
+    >;
     request?: SecondParameter<typeof customFetch>;
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
@@ -4382,3 +4392,17 @@ export const useDeleteSeller = <
 > => {
   return useMutation(getDeleteSellerMutationOptions(options));
 };
+
+/**
+ * @description Represents the payload for creating a document.
+ */
+export interface CreateDocument {
+  employeeId: number;
+  type: string;
+  nomorSurat?: string | null;
+  perihal?: string | null;
+  tanggal: string;
+  status: string;
+  keterangan?: string | null;
+  filePath?: string | null; // Menambahkan properti filePath
+}

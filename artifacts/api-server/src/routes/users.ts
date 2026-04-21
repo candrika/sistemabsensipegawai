@@ -5,6 +5,12 @@ import bcrypt from "bcrypt";
 
 const router: IRouter = Router();
 
+// Middleware to handle errors globally
+router.use((err, req, res, next) => {
+  req.log.error({ err }, "Unhandled error occurred");
+  res.status(500).json({ message: "Internal server error" });
+});
+
 // =====================
 // GET ALL USERS
 // =====================

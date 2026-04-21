@@ -15,7 +15,7 @@ import {
   ComplaintPrioritas,
   ComplaintKategori,
   ComplaintJenisPelanggan
-} from "@workspace/api-client-react/src/generated/api.schemas";
+} from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -241,7 +241,7 @@ export default function Keluhan() {
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader className="pb-6">
               <DialogTitle className="text-2xl font-bold flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                <div className="h-10 w-10 rounded-xl bg-linear-to-brm-blue-500 to-purple-600 flex items-center justify-center">
                   <MessageSquareWarning className="h-5 w-5 text-white" />
                 </div>
                 Catat Keluhan Baru
@@ -747,7 +747,7 @@ export default function Keluhan() {
 
       <Dialog open={!!selectedComplaint} onOpenChange={(open) => !open && setSelectedComplaint(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto sm:rounded-2xl p-0 overflow-hidden border-0 shadow-2xl">
-          <div className="bg-gradient-to-r from-slate-900 via-indigo-900 to-purple-950 p-6 text-white relative overflow-hidden">
+          <div className="bg-linear-to-r from-slate-900 via-indigo-900 to-purple-950 p-6 text-white relative overflow-hidden">
             <div className="absolute inset-0 bg-black/10"></div>
             <div className="absolute -right-20 -top-20 w-40 h-40 bg-white/5 rounded-full blur-3xl"></div>
             <div className="absolute -left-20 -bottom-20 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>
@@ -766,7 +766,7 @@ export default function Keluhan() {
           {selectedComplaint && (
             <div className="p-6 space-y-8 bg-card">
               {/* Customer Information Card */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 p-6 rounded-2xl border border-blue-100 dark:border-blue-900/30">
+              <div className="bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 p-6 rounded-2xl border border-blue-100 dark:border-blue-900/30">
                 <div className="flex items-center gap-3 mb-4">
                   <User className="h-5 w-5 text-blue-600" />
                   <h4 className="font-bold text-lg text-blue-900 dark:text-blue-100">Informasi Pelanggan</h4>
@@ -831,7 +831,7 @@ export default function Keluhan() {
               </div>
 
               {/* Complaint Details Card */}
-              <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 p-6 rounded-2xl border border-amber-100 dark:border-amber-900/30">
+              <div className="bg-linear-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 p-6 rounded-2xl border border-amber-100 dark:border-amber-900/30">
                 <div className="flex items-center gap-3 mb-4">
                   <FileText className="h-5 w-5 text-amber-600" />
                   <h4 className="font-bold text-lg text-amber-900 dark:text-amber-100">Detail Keluhan</h4>

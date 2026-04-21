@@ -10,7 +10,9 @@ import {
   LayoutDashboard,
   ShieldCheck,
   LogOut,
-  UserCog 
+  UserCog,
+  DollarSign,
+  Coins
 } from "lucide-react";
 import { ReactNode, useState } from "react";
 import { Button } from "./ui/button";
@@ -37,6 +39,7 @@ const ALL_NAV = [
 
   // SERVICE
   { name: "Inventori", href: "/inventori", icon: Package, roles: ["admin", "saler"] },
+  { name: "Realisasi Anggaran", href: "/realisasi-anggaran", icon: Coins, roles: ["admin"] },
   { name: "Keluhan Pelanggan", href: "/keluhan", icon: MessageSquareWarning, roles: ["admin", "saler", "pelanggan"] },
   { name: "Role & Permission", href: "/role-manager", icon: ShieldCheck, roles: ["admin"] },
   { name: "User Manager", href: "/user-manager", icon: UserCog, roles: ["admin"] },
