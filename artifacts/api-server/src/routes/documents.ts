@@ -9,7 +9,7 @@ import {
   attendanceTable,
   insertDocumentSchema,
 } from "@workspace/db";
-import { eq, count, and, gt, isNull, or, sql, inArray } from "drizzle-orm";
+import { eq, count, and, gt, gte, isNull, or, sql, inArray } from "drizzle-orm";
 
 // Ensure upload directory exists
 const UPLOAD_DIR = "uploads/documents";
@@ -60,7 +60,7 @@ router.get("/documents/summary", async (req, res) => {
       .where(
         and(
           inArray(attendanceTable.status, ["izin", "cuti", "dinas"] as any),
-          gt(attendanceTable.tglAkhir, today)
+          gte(attendanceTable.tglAkhir, today)
         )
       )
       .groupBy(attendanceTable.status);
@@ -74,7 +74,7 @@ router.get("/documents/summary", async (req, res) => {
           inArray(documentsTable.type, ["SKMJ", "SURAT_TUGAS"] as any),
           or(
             isNull(documentsTable.expirationDate),
-            gt(documentsTable.expirationDate, today)
+            gte(documentsTable.expirationDate, today)
           )
         )
       )
