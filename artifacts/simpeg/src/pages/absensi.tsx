@@ -26,9 +26,7 @@ const STATUS_CONFIG = {
   izin: { label: "Izin", color: "bg-blue-50 text-blue-700 border-blue-200", dot: "bg-blue-500" },
   cuti: { label: "Cuti", color: "bg-amber-50 text-amber-700 border-amber-200", dot: "bg-amber-500" },
   dinas: { label: "Dinas Luar", color: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" },
-  absen: { label: "Absen", color: "bg-red-50 text-red-700 border-red-200", dot: "bg-red-500" },
-  skmj: { label: "SKMJ", color: "bg-violet-50 text-violet-700 border-violet-200", dot: "bg-violet-500" },
-  surat_tugas: { label: "Surat Tugas", color: "bg-rose-50 text-rose-700 border-rose-200", dot: "bg-rose-500" }
+  absen: { label: "Absen", color: "bg-red-50 text-red-700 border-red-200", dot: "bg-red-500" }
 };
 
 export default function Presensi() {
@@ -272,9 +270,6 @@ export default function Presensi() {
               <SelectItem value="izin">Izin</SelectItem>
               <SelectItem value="cuti">Cuti</SelectItem>
               <SelectItem value="dinas">Dinas Luar</SelectItem>
-              <SelectItem value="absen">Absen</SelectItem>
-              <SelectItem value="skmj">SKMJ</SelectItem>
-              <SelectItem value="surat_tugas">Surat Tugas</SelectItem>
             </SelectContent>
           </Select>
         </div>
