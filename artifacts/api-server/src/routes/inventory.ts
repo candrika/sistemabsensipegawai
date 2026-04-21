@@ -43,6 +43,18 @@ router.post("/inventory/items", async (req, res) => {
     const parsed = insertInventoryItemSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ message: "Validation failed", errors: parsed.error.issues });
     const [item] = await db.insert(inventoryItemsTable).values(parsed.data).returning();
+
+    // Catat stok awal sebagai transaksi "masuk" agar konsisten dengan rekap total
+    if (item.stok > 0) {
+      await db.insert(inventoryTransactionsTable).values({
+        itemId: item.id,
+        tipe: "masuk",
+        jumlah: item.stok,
+        tanggal: new Date().toISOString().split("T")[0],
+        keterangan: "Stok awal",
+      });
+    }
+
     res.status(201).json({ ...item, createdAt: item.createdAt.toISOString() });
   } catch (err) {
     req.log.error({ err }, "Failed to create inventory item");
