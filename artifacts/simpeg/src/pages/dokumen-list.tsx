@@ -219,11 +219,23 @@ export default function DokumenList() {
     }
   };
 
-  const handleDownload = async (filePath: string, fileName: string) => {
+  const sanitize = (s: string) =>
+    s.replace(/[\\/:*?"<>|]+/g, "-").replace(/\s+/g, "_").trim() || "dokumen";
+
+  const handleDownload = async (filePath: string, doc: any) => {
     try {
       const response = await fetch(filePath);
       if (!response.ok) throw new Error("Download failed");
       const blob = await response.blob();
+
+      // Pertahankan ekstensi asli dari filePath
+      const ext = (filePath.match(/\.[a-zA-Z0-9]{1,6}$/)?.[0] || "").toLowerCase();
+      const tipe = String(docType).toLowerCase();
+      const nomor = doc.nomorSurat ? sanitize(doc.nomorSurat) : `id-${doc.id}`;
+      const tgl = doc.tanggal ? format(new Date(doc.tanggal), "yyyyMMdd") : "";
+      const pegawai = doc.employee?.nama ? `_${sanitize(doc.employee.nama)}` : "";
+      const fileName = `${tipe}_${nomor}${pegawai}${tgl ? "_" + tgl : ""}${ext}`;
+
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -232,6 +244,7 @@ export default function DokumenList() {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
+      toast({ title: "Unduhan dimulai", description: fileName });
     } catch (err) {
       toast({ title: "Gagal", description: "Gagal mengunduh file", variant: "destructive" });
     }
@@ -267,17 +280,18 @@ export default function DokumenList() {
               <TableHead>Pegawai</TableHead>
               <TableHead>Perihal</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>File</TableHead>
               <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center h-32">Memuat...</TableCell>
+                <TableCell colSpan={6} className="text-center h-32">Memuat...</TableCell>
               </TableRow>
             ) : filteredDocuments.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center h-32 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center h-32 text-muted-foreground">
                   Tidak ada dokumen ditemukan.
                 </TableCell>
               </TableRow>
@@ -315,15 +329,24 @@ export default function DokumenList() {
                       )}
                     </div>
                   </TableCell>
+                  <TableCell>
+                    {doc.filePath ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 gap-1.5 text-blue-700 border-blue-200 hover:bg-blue-50"
+                        onClick={() => handleDownload(doc.filePath, doc)}
+                        title={`Unduh ${doc.filePath.split("/").pop()}`}
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        <span className="text-xs font-medium">Unduh</span>
+                      </Button>
+                    ) : (
+                      <span className="text-xs text-muted-foreground italic">tidak ada file</span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
-                      <Button
-                        variant="ghost" size="icon"
-                        className={doc.filePath ? "text-blue-600" : "opacity-20 cursor-not-allowed"}
-                        onClick={() => doc.filePath && handleDownload(doc.filePath, doc.nomorSurat || "dokumen")}
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
                       {doc.source !== "attendance" && (
                         <>
                           {doc.status === "pending" && (
