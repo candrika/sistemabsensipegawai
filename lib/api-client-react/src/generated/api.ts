@@ -24,7 +24,6 @@ import type {
   ComplaintSummary,
   CreateAttendanceRecord,
   CreateComplaint,
-  CreateDocument,
   CreateEmployee,
   CreateInventoryItem,
   CreateInventoryTransaction,
