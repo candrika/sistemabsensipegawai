@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
 import { db, usersTable, rolesTable, employeesTable, sellersTable, customersTable, insertUserSchema } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -6,7 +6,7 @@ import bcrypt from "bcrypt";
 const router: IRouter = Router();
 
 // Middleware to handle errors globally
-router.use((err, req, res, next) => {
+router.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   req.log.error({ err }, "Unhandled error occurred");
   res.status(500).json({ message: "Internal server error" });
 });

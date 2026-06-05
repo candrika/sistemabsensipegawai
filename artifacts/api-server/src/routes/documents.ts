@@ -54,30 +54,40 @@ router.get("/documents/summary", async (req, res) => {
     const today = new Date().toISOString().split("T")[0];
 
     // IJIN + DINAS from attendance (auto presensi)
+    const attConds: any[] = [
+      inArray(attendanceTable.status, ["izin", "cuti", "dinas"] as any),
+      gte(attendanceTable.tglAkhir, today)
+    ];
+    
+    // Filter by employee if pegawai role
+    if (req.user?.roleName === "pegawai" && req.user?.employeeId) {
+      attConds.push(eq(attendanceTable.employeeId, req.user.employeeId));
+    }
+
     const attRows = await db
       .select({ status: attendanceTable.status, count: count() })
       .from(attendanceTable)
-      .where(
-        and(
-          inArray(attendanceTable.status, ["izin", "cuti", "dinas"] as any),
-          gte(attendanceTable.tglAkhir, today)
-        )
-      )
+      .where(and(...attConds))
       .groupBy(attendanceTable.status);
 
     // SKMJ + SURAT_TUGAS from documents
+    const docConds: any[] = [
+      inArray(documentsTable.type, ["SKMJ", "SURAT_TUGAS"] as any),
+      or(
+        isNull(documentsTable.expirationDate),
+        gte(documentsTable.expirationDate, today)
+      )
+    ];
+    
+    // Filter by employee if pegawai role
+    if (req.user?.roleName === "pegawai" && req.user?.employeeId) {
+      docConds.push(eq(documentsTable.employeeId, req.user.employeeId));
+    }
+
     const docRows = await db
       .select({ type: documentsTable.type, count: count() })
       .from(documentsTable)
-      .where(
-        and(
-          inArray(documentsTable.type, ["SKMJ", "SURAT_TUGAS"] as any),
-          or(
-            isNull(documentsTable.expirationDate),
-            gte(documentsTable.expirationDate, today)
-          )
-        )
-      )
+      .where(and(...docConds))
       .groupBy(documentsTable.type);
 
     const summary = { IJIN: 0, DINAS: 0, SKMJ: 0, SURAT_TUGAS: 0 };
@@ -132,6 +142,11 @@ router.get("/documents", async (req, res) => {
         conds.push(inArray(documentsTable.type, ["SKMJ", "SURAT_TUGAS"] as any));
       }
 
+      // Filter by employee if pegawai role
+      if (req.user?.roleName === "pegawai" && req.user?.employeeId) {
+        conds.push(eq(documentsTable.employeeId, req.user.employeeId));
+      }
+
       officialDocs = await db
         .select({
           id: documentsTable.id,
@@ -173,6 +188,11 @@ router.get("/documents", async (req, res) => {
         attConds.push(
           inArray(attendanceTable.status, ["izin", "cuti", "dinas"] as any)
         );
+      }
+
+      // Filter by employee if pegawai role
+      if (req.user?.roleName === "pegawai" && req.user?.employeeId) {
+        attConds.push(eq(attendanceTable.employeeId, req.user.employeeId));
       }
 
       attendanceDocs = await db
@@ -239,6 +259,14 @@ router.get("/documents/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+    
+    const conditions: any[] = [eq(documentsTable.id, id)];
+    
+    // Filter by employee if pegawai role
+    if (req.user?.roleName === "pegawai" && req.user?.employeeId) {
+      conditions.push(eq(documentsTable.employeeId, req.user.employeeId));
+    }
+    
     const [record] = await db
       .select({
         id: documentsTable.id,
@@ -267,7 +295,7 @@ router.get("/documents/:id", async (req, res) => {
         employeesTable,
         eq(documentsTable.employeeId, employeesTable.id)
       )
-      .where(eq(documentsTable.id, id));
+      .where(and(...conditions));
     if (!record) return res.status(404).json({ message: "Document not found" });
     const today = new Date().toISOString().split("T")[0];
     res.json({
@@ -301,6 +329,11 @@ router.post("/documents", async (req, res) => {
       });
     }
 
+    // Pegawai hanya bisa create document untuk diri sendiri
+    if (req.user?.roleName === "pegawai" && req.user?.employeeId && parsed.data.employeeId !== req.user.employeeId) {
+      return res.status(403).json({ message: "Forbidden: dapat hanya upload dokumen diri sendiri" });
+    }
+
     const [record] = await db
       .insert(documentsTable)
       .values(parsed.data)
@@ -330,6 +363,19 @@ router.patch("/documents/:id", async (req, res) => {
     if (!status || !["pending", "approved", "rejected"].includes(status)) {
       return res.status(400).json({ message: "Invalid status" });
     }
+
+    // Check if pegawai is trying to update someone else's document
+    if (req.user?.roleName === "pegawai" && req.user?.employeeId) {
+      const [existingDoc] = await db
+        .select()
+        .from(documentsTable)
+        .where(eq(documentsTable.id, id));
+      
+      if (!existingDoc || existingDoc.employeeId !== req.user.employeeId) {
+        return res.status(403).json({ message: "Forbidden: dapat hanya edit dokumen diri sendiri" });
+      }
+    }
+
     const [updated] = await db
       .update(documentsTable)
       .set({ status: status as any })
@@ -350,6 +396,19 @@ router.delete("/documents/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+
+    // Check if pegawai is trying to delete someone else's document
+    if (req.user?.roleName === "pegawai" && req.user?.employeeId) {
+      const [existingDoc] = await db
+        .select()
+        .from(documentsTable)
+        .where(eq(documentsTable.id, id));
+      
+      if (!existingDoc || existingDoc.employeeId !== req.user.employeeId) {
+        return res.status(403).json({ message: "Forbidden: dapat hanya hapus dokumen diri sendiri" });
+      }
+    }
+
     const [deleted] = await db
       .delete(documentsTable)
       .where(eq(documentsTable.id, id))

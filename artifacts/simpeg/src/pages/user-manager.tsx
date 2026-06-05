@@ -11,6 +11,7 @@ import {
 import { useGetEmployees } from "@workspace/api-client-react";
 
 import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/lib/auth-context";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,11 +24,17 @@ import { useToast } from "@/hooks/use-toast";
 export default function UserManager() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const { data: users, isLoading } = useGetUsers();
   const { data: roles } = useGetRoles();
 
   const { data: employees } = useGetEmployees();
+
+  const isAdmin = user?.roleName === "admin";
+  const visibleUsers = user?.roleName === "pegawai"
+    ? users?.filter((u) => u.id === user.id)
+    : users;
 
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
@@ -115,8 +122,13 @@ export default function UserManager() {
     <div className="space-y-6">
       {/* HEADER */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">User Manager</h1>
-        <Button onClick={() => setOpen(true)}>Tambah User</Button>
+        <div>
+          <h1 className="text-2xl font-bold">User Manager</h1>
+          {user?.roleName === "pegawai" && (
+            <p className="text-sm text-muted-foreground">Anda hanya melihat data pengguna Anda sendiri.</p>
+          )}
+        </div>
+        {isAdmin && <Button onClick={() => setOpen(true)}>Tambah User</Button>}
       </div>
 
       {/* LIST */}
@@ -127,28 +139,34 @@ export default function UserManager() {
         <CardContent className="space-y-3">
           {isLoading ? (
             <p>Loading...</p>
-          ) : (
-            users?.map((user) => (
+          ) : visibleUsers?.length ? (
+            visibleUsers.map((record) => (
               <div
-                key={user.id}
+                key={record.id}
                 className="flex justify-between items-center p-3 border rounded-lg"
               >
                 <div>
-                  <p className="font-semibold">{user.username}</p>
+                  <p className="font-semibold">{record.username}</p>
                   <p className="text-sm text-muted-foreground">
-                    Role: {getRoleName(user.roleId)} | Pegawai: {user.employee?.nama || "-"}
+                    Role: {getRoleName(record.roleId)} | Pegawai: {record.employee?.nama || "-"}
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => handleEdit(user)}>
-                    Edit
-                  </Button>
-                  <Button size="sm" variant="destructive" onClick={() => handleDelete(user.id)}>
-                    Hapus
-                  </Button>
+                  {(isAdmin || record.id === user?.id) && (
+                    <Button size="sm" variant="outline" onClick={() => handleEdit(record)}>
+                      Edit
+                    </Button>
+                  )}
+                  {isAdmin && (
+                    <Button size="sm" variant="destructive" onClick={() => handleDelete(record.id)}>
+                      Hapus
+                    </Button>
+                  )}
                 </div>
               </div>
             ))
+          ) : (
+            <p className="text-sm text-muted-foreground">Tidak ada data user yang dapat ditampilkan.</p>
           )}
         </CardContent>
       </Card>

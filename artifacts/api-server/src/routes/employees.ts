@@ -63,7 +63,7 @@ router.post("/employees", async (req, res) => {
   try {
     const parsed = insertEmployeeSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ message: "Validation failed", errors: parsed.error.issues });
-    const [employee] = await db.insert(employeesTable).values(parsed.data).returning();
+    const [employee] = await db.insert(employeesTable).values(parsed.data as any).returning();
     res.status(201).json({ ...employee, createdAt: employee.createdAt.toISOString() });
   } catch (err) {
     req.log.error({ err }, "Failed to create employee");
@@ -77,7 +77,7 @@ router.put("/employees/:id", async (req, res) => {
     if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
     const parsed = insertEmployeeSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ message: "Validation failed", errors: parsed.error.issues });
-    const [employee] = await db.update(employeesTable).set(parsed.data).where(eq(employeesTable.id, id)).returning();
+    const [employee] = await db.update(employeesTable).set(parsed.data as any).where(eq(employeesTable.id, id)).returning();
     if (!employee) return res.status(404).json({ message: "Employee not found" });
     res.json({ ...employee, createdAt: employee.createdAt.toISOString() });
   } catch (err) {

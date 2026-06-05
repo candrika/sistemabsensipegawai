@@ -12,9 +12,17 @@ const router: IRouter = Router();
 
 router.get("/attendance/summary", async (req, res) => {
   try {
+    const conditions: any[] = [];
+    
+    // Filter by employee if pegawai role
+    if (req.user?.roleName === "pegawai" && req.user?.employeeId) {
+      conditions.push(eq(attendanceTable.employeeId, req.user.employeeId));
+    }
+
     const rows = await db
       .select({ status: attendanceTable.status, count: count() })
       .from(attendanceTable)
+      .where(conditions.length ? and(...conditions) : undefined)
       .groupBy(attendanceTable.status);
 
     const summary = { izin: 0, cuti: 0, dinas: 0, absen: 0 };
@@ -38,10 +46,15 @@ router.get("/attendance", async (req, res) => {
       status?: string;
       date?: string;
     };
-
+    
     const conditions = [];
     const isAttendanceStatus =
       !status || ["izin", "cuti", "dinas", "absen"].includes(status);
+
+    // Filter by employee if pegawai role
+    if (req.user?.roleName === "pegawai" && req.user?.employeeId) {
+      conditions.push(eq(attendanceTable.employeeId, req.user.employeeId));
+    }
 
     if (status && ["izin", "cuti", "dinas", "absen"].includes(status)) {
       conditions.push(eq(attendanceTable.status, status as any));
@@ -93,6 +106,12 @@ router.get("/attendance", async (req, res) => {
 
     if (wantedTypes.length > 0) {
       const docConds: any[] = [inArray(documentsTable.type, wantedTypes as any)];
+      
+      // Filter by employee if pegawai role
+      if (req.user?.roleName === "pegawai" && req.user?.employeeId) {
+        docConds.push(eq(documentsTable.employeeId, req.user.employeeId));
+      }
+      
       if (date) {
         docConds.push(
           and(
@@ -169,6 +188,11 @@ router.post("/attendance", async (req, res) => {
 
     const data = parsed.data;
 
+    // Pegawai hanya bisa create attendance untuk diri sendiri
+    if (req.user?.roleName === "pegawai" && req.user?.employeeId && data.employeeId !== req.user.employeeId) {
+      return res.status(403).json({ message: "Forbidden: dapat hanya input data diri sendiri" });
+    }
+
     const payload = {
       employeeId: data.employeeId,
       status: data.status,
@@ -198,7 +222,7 @@ router.post("/attendance", async (req, res) => {
     // documents listing via a synthetic union in GET /documents (no
     // duplicate row inserted into the documents table).
 
-    res.status(201).json({
+    return res.status(201).json({
       ...record,
       createdAt: record.createdAt.toISOString(),
       employee: employee
@@ -210,7 +234,7 @@ router.post("/attendance", async (req, res) => {
     });
   } catch (err) {
     req.log.error({ err }, "Failed to create attendance record");
-    res.status(500).json({
+    return res.status(500).json({
       message: err instanceof Error ? err.message : "Internal server error",
     });
   }
@@ -229,6 +253,18 @@ router.put("/attendance/:id", async (req, res) => {
       });
     }
 
+    // Check if pegawai is trying to update someone else's record
+    if (req.user?.roleName === "pegawai" && req.user?.employeeId) {
+      const [existingRecord] = await db
+        .select()
+        .from(attendanceTable)
+        .where(eq(attendanceTable.id, id));
+      
+      if (!existingRecord || existingRecord.employeeId !== req.user.employeeId) {
+        return res.status(403).json({ message: "Forbidden: dapat hanya edit data diri sendiri" });
+      }
+    }
+
     const [record] = await db
       .update(attendanceTable)
       .set(parsed.data)
@@ -244,7 +280,7 @@ router.put("/attendance/:id", async (req, res) => {
       .from(employeesTable)
       .where(eq(employeesTable.id, record.employeeId));
 
-    res.json({
+    return res.json({
       ...record,
       createdAt: record.createdAt.toISOString(),
       employee: employee
@@ -256,7 +292,7 @@ router.put("/attendance/:id", async (req, res) => {
     });
   } catch (err) {
     req.log.error({ err }, "Failed to update attendance record");
-    res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ message: "Internal server error" });
   }
 });
 
@@ -264,6 +300,18 @@ router.delete("/attendance/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+
+    // Check if pegawai is trying to delete someone else's record
+    if (req.user?.roleName === "pegawai" && req.user?.employeeId) {
+      const [existingRecord] = await db
+        .select()
+        .from(attendanceTable)
+        .where(eq(attendanceTable.id, id));
+      
+      if (!existingRecord || existingRecord.employeeId !== req.user.employeeId) {
+        return res.status(403).json({ message: "Forbidden: dapat hanya hapus data diri sendiri" });
+      }
+    }
 
     const [deleted] = await db
       .delete(attendanceTable)
@@ -274,10 +322,10 @@ router.delete("/attendance/:id", async (req, res) => {
       return res.status(404).json({ message: "Record not found" });
     }
 
-    res.json({ message: "Record deleted" });
+    return res.json({ message: "Record deleted" });
   } catch (err) {
     req.log.error({ err }, "Failed to delete attendance record");
-    res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ message: "Internal server error" });
   }
 });
 

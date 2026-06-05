@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   useGetRoles,
   useGetPermissions,
@@ -8,6 +8,7 @@ import {
   getGetRolePermissionsQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/lib/auth-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -62,12 +63,22 @@ const resourceLabels: Record<string, string> = {
 export default function RoleManager() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
 
   const [loadingPermId, setLoadingPermId] = useState<number | null>(null);
 
   const { data: roles, isLoading: rolesLoading } = useGetRoles();
   const { data: allPermissions } = useGetPermissions();
+  const isEmployee = user?.roleName === "pegawai";
+  const visibleRoles = isEmployee ? roles?.filter((role) => role.id === user?.roleId) : roles;
+
+  useEffect(() => {
+    if (isEmployee && user?.roleId) {
+      setSelectedRoleId(user.roleId);
+    }
+  }, [isEmployee, user?.roleId]);
+
   const { data: rolePermissions, isLoading: permsLoading } = useGetRolePermissions(
     selectedRoleId ?? 0,
     { query: { enabled: selectedRoleId !== null } }
@@ -76,7 +87,7 @@ export default function RoleManager() {
   const assignMutation = useAssignPermissionToRole();
   const removeMutation = useRemovePermissionFromRole();
 
-  const selectedRole = roles?.find(r => r.id === selectedRoleId);
+  const selectedRole = visibleRoles?.find(r => r.id === selectedRoleId);
   const assignedPermIds = new Set(rolePermissions?.map(p => p.id) ?? []);
 
   const permissionsByResource = allPermissions?.reduce((acc, perm) => {
@@ -86,6 +97,7 @@ export default function RoleManager() {
   }, {} as Record<string, typeof allPermissions[number][]>) ?? {};
 
   const handleTogglePermission = async (permId: number, isAssigned: boolean) => {
+    if (isEmployee) return;
     if (!selectedRoleId) return;
 
     setLoadingPermId(permId);
@@ -136,7 +148,7 @@ export default function RoleManager() {
               <div key={i} className="h-20 rounded-xl bg-muted animate-pulse" />
             ))
           ) : (
-            roles?.map(role => {
+            visibleRoles?.map(role => {
               const Icon = roleIcons[role.name] ?? Shield;
               const gradient = roleColors[role.name] ?? "from-slate-600 to-slate-700";
               const isSelected = selectedRoleId === role.id;
@@ -215,7 +227,7 @@ export default function RoleManager() {
                                   : "bg-muted/20 border-border/40 text-muted-foreground hover:bg-muted/40"
                               }`}
                               onClick={() => handleTogglePermission(perm.id, isAssigned)}
-                              disabled={isPending}
+                              disabled={isPending || isEmployee}
                             >
                               <div>
                                 <p className="text-sm font-semibold">{actionLabels[perm.action] || perm.action}</p>
@@ -241,7 +253,7 @@ export default function RoleManager() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {roles?.map(role => {
+        {visibleRoles?.map(role => {
           const Icon = roleIcons[role.name] ?? Shield;
           const gradient = roleColors[role.name] ?? "from-slate-600 to-slate-700";
           return (

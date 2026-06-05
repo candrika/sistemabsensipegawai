@@ -11,10 +11,16 @@ import authRouter from "./auth";
 import sellersRouter from "./sellers";
 import customersRouter from "./customers";
 import settingsRouter from "./settings";
+import attachUserFromBasicAuth from "../middlewares/authMiddleware";
 
 const router: IRouter = Router();
 
+// Public auth endpoints (login/me)
 router.use(authRouter);
+
+// Attach `req.user` from Basic Auth for subsequent routes
+router.use(attachUserFromBasicAuth);
+
 router.use(healthRouter);
 router.use(rolesRouter);
 router.use(usersRouter);

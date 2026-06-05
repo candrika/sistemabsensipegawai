@@ -1,8 +1,9 @@
 import { Router, type IRouter } from "express";
-import multer from "multer";
+import multer, { type FileFilterCallback } from "multer";
 import path from "path";
 import fs from "fs";
-import { db, appSettingsTable, updateAppSettingsSchema } from "@workspace/db";
+import { eq } from "drizzle-orm";
+import { db, pool, appSettingsTable, updateAppSettingsSchema } from "@workspace/db";
 
 const router: IRouter = Router();
 
@@ -20,13 +21,31 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage,
   limits: { fileSize: 2 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => {
+  fileFilter: (_req: unknown, file: { mimetype: string }, cb: FileFilterCallback) => {
     const ok = /^image\/(png|jpeg|jpg|svg\+xml|webp|gif)$/.test(file.mimetype);
     cb(ok ? null : new Error("File harus berupa gambar (PNG/JPG/SVG/WebP/GIF)"), ok);
   },
 });
 
+function eqId(id: number) {
+  return eq(appSettingsTable.id, id);
+}
+
+async function ensureAppSettingsTableExists() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS app_settings (
+      id SERIAL PRIMARY KEY,
+      app_name text NOT NULL DEFAULT 'SI Kepegawaian',
+      app_subtitle text NOT NULL DEFAULT 'ENTERPRISE',
+      app_description text NOT NULL DEFAULT 'Platform terintegrasi untuk pengelolaan data pegawai, kehadiran, dokumen, inventori, dan keluhan pelanggan.',
+      logo_path text,
+      updated_at timestamp NOT NULL DEFAULT now()
+    );
+  `);
+}
+
 async function getOrCreateSettings() {
+  await ensureAppSettingsTableExists();
   const rows = await db.select().from(appSettingsTable).limit(1);
   if (rows.length > 0) return rows[0];
   const [created] = await db.insert(appSettingsTable).values({}).returning();
@@ -103,10 +122,5 @@ router.delete("/settings/logo", async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
-
-import { eq } from "drizzle-orm";
-function eqId(id: number) {
-  return eq(appSettingsTable.id, id);
-}
 
 export default router;
