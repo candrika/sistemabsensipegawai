@@ -41,7 +41,7 @@ export default function Login() {
   ];
 
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900">
+    <div className="min-h-screen flex bg-linear-to-br from-slate-950 via-indigo-950 to-slate-900">
       {/* Left side - Branding */}
       <div className="hidden lg:flex flex-col justify-between w-1/2 p-12 text-white">
         <div className="flex items-center gap-3">

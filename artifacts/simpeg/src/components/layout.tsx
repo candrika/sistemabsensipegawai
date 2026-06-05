@@ -71,15 +71,15 @@ export function Layout({ children }: { children: ReactNode }) {
   );
 
   return (
-    <div className="flex min-h-[100dvh] w-full bg-background text-foreground font-sans selection:bg-primary/20">
+    <div className="flex min-h-dvh w-full bg-background text-foreground font-sans selection:bg-primary/20">
       
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-72 flex flex-col bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-900 shadow-2xl transition-transform duration-300 md:relative md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:flex`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 w-72 flex flex-col bg-linear-to-brom-slate-900 via-indigo-950 to-slate-900 shadow-2xl transition-transform duration-300 md:relative md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:flex`}>
         
         {/* Header */}
         <div className="h-20 flex items-center px-6 bg-black/20 border-b border-white/10">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 bg-gradient-to-br from-primary to-indigo-400 rounded-xl flex items-center justify-center shadow-lg overflow-hidden">
+            <div className="h-10 w-10 bg-linear-to-br from-primary to-indigo-400 rounded-xl flex items-center justify-center shadow-lg overflow-hidden">
               {settings?.logoPath ? (
                 <img src={settings.logoPath} alt="logo" className="h-full w-full object-cover" />
               ) : (
@@ -135,7 +135,7 @@ export function Layout({ children }: { children: ReactNode }) {
         {/* USER */}
         <div className="p-4 border-t border-white/10 bg-black/10">
           <div className="flex items-center gap-3">
-            <div className={`h-10 w-10 rounded-full bg-gradient-to-br ${gradientColor} flex items-center justify-center text-white font-bold`}>
+            <div className={`h-10 w-10 rounded-full bg-linear-to-br ${gradientColor} flex items-center justify-center text-white font-bold`}>
               {initials}
             </div>
             <div className="flex-1">
@@ -174,7 +174,7 @@ function NavItem({ item, location, close }: any) {
       onClick={close}
       className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition ${
         isActive
-          ? "bg-gradient-to-r from-primary to-indigo-600 text-white"
+          ? "bg-linear-to-r from-primary to-indigo-600 text-white"
           : "text-white/70 hover:bg-white/10 hover:text-white"
       }`}
     >
