@@ -21,7 +21,11 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage,
   limits: { fileSize: 2 * 1024 * 1024 },
-  fileFilter: (_req: unknown, file: { mimetype: string }, cb: FileFilterCallback) => {
+  fileFilter: (
+    _req: unknown,
+    file: { mimetype: string },
+    cb: (error: Error | null, acceptFile?: boolean) => void,
+  ) => {
     const ok = /^image\/(png|jpeg|jpg|svg\+xml|webp|gif)$/.test(file.mimetype);
     cb(ok ? null : new Error("File harus berupa gambar (PNG/JPG/SVG/WebP/GIF)"), ok);
   },
